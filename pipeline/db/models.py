@@ -8,6 +8,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
     Index,
@@ -17,7 +18,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 RUN_STATUSES = ("running", "failed", "validated", "published", "superseded")
@@ -118,6 +119,7 @@ class BudgetLineItem(Base):
         Index("ix_budget_line_item_program", "program_id"),
         Index("ix_budget_line_item_pe", "program_element"),
         Index("ix_budget_line_item_bli", "line_item_number"),
+        Index("ix_budget_line_item_search", "search_tsv", postgresql_using="gin"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -142,6 +144,10 @@ class BudgetLineItem(Base):
     include_in_toa: Mapped[bool] = mapped_column(Boolean)
     classification: Mapped[str] = mapped_column(Text)
     raw_description_text: Mapped[str | None] = mapped_column(Text)
+    # generated column (migration 0003); never written by the pipeline
+    search_tsv: Mapped[str | None] = mapped_column(
+        TSVECTOR, Computed("<see migration 0003>", persisted=True), deferred=True
+    )
 
     amounts: Mapped[list[LineItemAmount]] = relationship(cascade="all, delete-orphan")
     cost_elements: Mapped[list[LineItemCostElement]] = relationship(cascade="all, delete-orphan")

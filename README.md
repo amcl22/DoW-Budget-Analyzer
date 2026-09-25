@@ -1,7 +1,7 @@
 # DoW-Budget-Analyzer
 
 Internal tool for searching and tracking DoD/DoW budget line items (spec: `01-spec.md`,
-sources: `02-data-sources.md`). **Current state: Steps 1–3 of the build sequence.** Ingestion
+sources: `02-data-sources.md`). **Current state: Steps 1–4 of the build sequence**, meaning ingestion plus the search and browse app. Ingestion
 covers R-1 (RDT&E) and P-1 (Procurement) for FY2024–FY2027, plus the R-2 justification books
 that can be fetched automatically. The design is in `docs/step1-plan.md`; what Step 3 added,
 and what the data looks like, is in `docs/step3-report.md`.
@@ -25,6 +25,26 @@ budget discover-books --fy 2027      # refresh sources/fy2027_books.yaml from th
 
 Set `DATABASE_URL` to use a different database. Downloads go to `data/raw/` (gitignored). The
 R-2 books are several hundred MB per year, so `--no-books` skips them.
+
+## Web app (search and browse)
+
+```bash
+cd web && npm install && npm run build && cd ..   # builds web/dist
+uvicorn api.main:app --port 8000                  # API at /api, app at http://localhost:8000
+# frontend development with hot reload: `npm run dev` in web/ (proxies /api to port 8000)
+```
+
+- **Search:** keywords across program titles, PE/BLI numbers and R-2 descriptions. It uses
+  Postgres full-text search, and exact or prefix PE/BLI matches rank first. Matching words in
+  descriptions are highlighted.
+- **Filters:** release (latest by default, or all), exhibit, service, appropriation, budget
+  activity, and a budget-year $M range.
+- **Results:** sortable columns, prior, current and budget-year amounts (with quantities for
+  procurement), year-over-year change with ±20% flagged, and a link to the exact PDF page
+  (the R-2 page when there is one). Also an **Export CSV** of the current search.
+- **Shareable state:** the search and filters live in the URL, so copying the address shares a
+  result list.
+- **API docs** are at `/api/docs`: `GET /api/search`, `/api/search.csv` and `/api/facets`.
 
 ## What `ingest` does
 
@@ -80,7 +100,8 @@ Those sites block automated downloads (Akamai refuses cloud IPs). To include the
 
 ```bash
 pytest                                            # offline (fixtures in tests/fixtures)
-TEST_DATABASE_URL=postgresql+psycopg://... pytest # also DB tests; DROPS that DB's public schema
+TEST_DATABASE_URL=postgresql+psycopg://... pytest # also DB and API tests; DROPS that DB's public schema
+E2E_BASE_URL=http://localhost:8000 pytest tests/e2e   # browser smoke test against a running app
 ```
 
 Fixtures are small cuts of the real releases. Rebuild them with
