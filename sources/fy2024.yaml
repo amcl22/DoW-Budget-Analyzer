@@ -1,0 +1,12 @@
+# Verified source URLs for the FY2024 President's Budget (see 02-data-sources.md).
+# List files explicitly; never construct URLs by pattern.
+fiscal_year: 2024
+budget_cycle: PB2024
+exhibits:
+  R-1:
+    - role: data
+      format: xlsx
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2024/r1_display.xlsx
+    - role: summary_pdf
+      format: pdf
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2024/FY2024_r1.pdf

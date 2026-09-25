@@ -81,15 +81,22 @@ def load_column_map(exhibit: str, cycle: str) -> ExhibitColumns:
 @dataclass(frozen=True)
 class Account:
     code: str
-    title: str
+    title: str                      # current title
     service_branch: str
     in_rdte_title: bool
+    former_titles: tuple[str, ...] = ()
+
+    @property
+    def titles(self) -> tuple[str, ...]:
+        return (self.title, *self.former_titles)
 
 
 def load_accounts() -> dict[str, Account]:
     data = _load_yaml(CONFIG_DIR / "appropriation_accounts.yaml")
     return {
-        code: Account(code, a["title"], a["service_branch"], bool(a["in_rdte_title"]))
+        code: Account(
+            code, a["title"], a["service_branch"], bool(a["in_rdte_title"]), tuple(a.get("former_titles", ()))
+        )
         for code, a in data["accounts"].items()
     }
 

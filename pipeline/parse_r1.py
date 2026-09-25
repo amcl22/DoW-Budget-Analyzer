@@ -23,6 +23,12 @@ class RawRow:
     amounts: dict[str, str]       # Excel header -> cell text ('' when blank)
 
 
+@dataclass(frozen=True)
+class ParsedSheet:
+    rows: list[RawRow]
+    footnotes: list[str]          # text-only rows below/among the data ('*Includes enacted ...')
+
+
 def _cell_text(value) -> str:
     if value is None:
         return ""
@@ -31,7 +37,7 @@ def _cell_text(value) -> str:
     return str(value).strip()
 
 
-def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> list[RawRow]:
+def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> ParsedSheet:
     wb = openpyxl.load_workbook(path, read_only=True)
     try:
         if cols.sheet not in wb.sheetnames:
@@ -74,9 +80,14 @@ def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> list[RawRow]:
     field_pos = {f: position[normalize_header(h)] for f, h in cols.fields.items()}
     amount_pos = {a.header: position[normalize_header(a.header)] for a in cols.amounts}
 
-    out = []
+    out, footnotes = [], []
     for offset, row in enumerate(rows[header_idx + 1 :]):
-        if all(c is None or _cell_text(c) == "" for c in row):
+        filled = [i for i, c in enumerate(row) if _cell_text(c) != ""]
+        if not filled:
+            continue
+        if filled == [0]:
+            # footnote text in the first column only, e.g. '*Includes enacted funding in ...'
+            footnotes.append(_cell_text(row[0]))
             continue
         cells = list(row) + [None] * (len(headers) - len(row))
         out.append(
@@ -86,4 +97,4 @@ def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> list[RawRow]:
                 amounts={h: _cell_text(cells[i]) for h, i in amount_pos.items()},
             )
         )
-    return out
+    return ParsedSheet(out, footnotes)

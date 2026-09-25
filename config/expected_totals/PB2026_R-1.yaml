@@ -1,0 +1,25 @@
+# Transcribed from FY2026_r1.pdf, department summary by appropriation (physical page 6).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header. Blank in the PDF = 0.
+source: "FY2026_r1.pdf physical page 6"
+groups:
+  - label: "Total Research, Development, Test, & Evaluation"
+    include_in_toa: true
+    amounts:
+      "FY 2024 Actuals":                149502462
+      "FY 2025 Enacted":                141241561
+      "FY 2025 Supplemental":           110678
+      "FY 2025 Total":                  141352239
+      "FY 2026 Disc Request":           142001108
+      "FY 2026 Reconciliation Request": 37068954
+      "FY 2026 Total":                  179070062
+  - label: "Total Not in Research, Development, Test, & Evaluation"
+    include_in_toa: false
+    amounts:
+      "FY 2024 Actuals":                3909141
+      "FY 2025 Enacted":                2452098
+      "FY 2025 Supplemental":           0
+      "FY 2025 Total":                  2452098
+      "FY 2026 Disc Request":           1187376
+      "FY 2026 Reconciliation Request": 0
+      "FY 2026 Total":                  1187376

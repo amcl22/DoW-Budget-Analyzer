@@ -26,7 +26,7 @@ HERE = Path(__file__).parent
 
 def main(xlsx: Path, pdf: Path) -> None:
     cols = load_column_map("R-1", "PB2027")
-    records = normalize_rows(parse_r1_workbook(xlsx, cols), cols, load_accounts())
+    records = normalize_rows(parse_r1_workbook(xlsx, cols).rows, cols, load_accounts())
     pages = parse_r1_pdf(pdf, cols.pdf_columns)
     links = link_line_items(records, pages, cols)
     keep_rows = {

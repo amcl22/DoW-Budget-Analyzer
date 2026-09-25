@@ -1,0 +1,17 @@
+# Transcribed from FY2025_r1.pdf, department summary by appropriation (physical page 6).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header. Blank in the PDF = 0.
+source: "FY2025_r1.pdf physical page 6"
+groups:
+  - label: "Total Research, Development, Test, & Evaluation"
+    include_in_toa: true
+    amounts:
+      "FY 2023 Actuals":                     140892956
+      "FY 2024 PB Request with CR Amounts*": 139658261
+      "FY 2025 Request":                     143156590
+  - label: "Total Not in Research, Development, Test, & Evaluation"
+    include_in_toa: false
+    amounts:
+      "FY 2023 Actuals":                     4014577
+      "FY 2024 PB Request with CR Amounts*": 1937733
+      "FY 2025 Request":                     1729098

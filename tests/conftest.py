@@ -26,7 +26,7 @@ def accounts():
 
 @pytest.fixture(scope="session")
 def raw_rows(cols):
-    return parse_r1_workbook(SAMPLE_XLSX, cols)
+    return parse_r1_workbook(SAMPLE_XLSX, cols).rows
 
 
 @pytest.fixture(scope="session")

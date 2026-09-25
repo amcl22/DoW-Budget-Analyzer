@@ -121,7 +121,8 @@ def ingest(
         typer.echo(f"Run {run.id}: parsing...")
 
         try:
-            records = normalize_rows(parse_r1_workbook(by_role["data"].path, cols), cols, accounts)
+            sheet = parse_r1_workbook(by_role["data"].path, cols)
+            records = normalize_rows(sheet.rows, cols, accounts)
             pages = parse_r1_pdf(by_role["summary_pdf"].path, cols.pdf_columns)
         except (ParseError, NormalizeError, PdfFormatError) as e:
             _finish(session, run, "failed", {"passed": False, "error": str(e)})
@@ -132,6 +133,7 @@ def ingest(
         checks = run_checks(records, pages, links, cols, accounts, load_expected_totals(cycle, exhibit))
         stats = {
             "line_items": len(records),
+            "excel_footnotes": sheet.footnotes,
             "pdf_pages": len(pages),
             "page_refs": sum(len(v) for v in links.refs.values()),
             "fy_budget_year_total_thousands": sum(r.amount(f"FY {fy} Total") or 0 for r in records),

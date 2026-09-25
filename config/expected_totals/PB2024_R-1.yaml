@@ -1,0 +1,21 @@
+# Transcribed from FY2024_r1.pdf, department summary by appropriation (physical page 5).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header. Blank in the PDF = 0.
+source: "FY2024_r1.pdf physical page 5"
+groups:
+  - label: "Total Research, Development, Test, & Evaluation"
+    include_in_toa: true
+    amounts:
+      "FY 2022 Actuals":                    119496910
+      "FY 2023 Less Supplementals Enacted": 139658260
+      "FY 2023 Supplementals Enacted*":     455268
+      "FY 2023 Total Enacted":              140113528
+      "FY 2024 Request":                    144979625
+  - label: "Total Not in Research, Development, Test, & Evaluation"
+    include_in_toa: false
+    amounts:
+      "FY 2022 Actuals":                    3666934
+      "FY 2023 Less Supplementals Enacted": 4018511
+      "FY 2023 Supplementals Enacted*":     0
+      "FY 2023 Total Enacted":              4018511
+      "FY 2024 Request":                    1937733

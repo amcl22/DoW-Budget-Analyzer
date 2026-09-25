@@ -17,7 +17,7 @@ from .pdf_r1 import PdfPage, PdfRow
 
 MIN_AMOUNT_VERIFIED = 0.99
 MAX_DETAILS = 50
-DEPARTMENT_SECTION = "Department of War"
+DEPARTMENT_SECTIONS = ("Department of War", "Department of Defense")  # renamed in 2025
 
 
 @dataclass
@@ -62,18 +62,22 @@ def check_row_arithmetic(records: list[LineItemRecord]) -> CheckResult:
         for a in r.amounts:
             by_fy[a.funds_fiscal_year][a.funding_category] = a.amount_thousands
         for fy, cats in by_fy.items():
+            if set(cats) <= {"total"}:
+                continue  # a year reported as a single column has nothing to add up
             parts = sum(v for c, v in cats.items() if c != "total")
             if cats.get("total", 0) != parts:
                 problems.append(f"row {r.source_row_number} FY{fy}: components {parts:,} != total {cats.get('total', 0):,}")
     return _check("row_arithmetic", True, problems, "components = total on every row, every year")
 
 
-def check_no_negative_amounts(records: list[LineItemRecord]) -> CheckResult:
+def check_negative_amounts(records: list[LineItemRecord]) -> CheckResult:
     problems = [
         f"row {r.source_row_number} {a.source_column}: {a.amount_thousands:,}"
         for r in records for a in r.amounts if a.amount_thousands < 0
     ]
-    return _check("no_negative_amounts", True, problems, "no negative amounts")
+    # Negative amounts are legitimate in some releases (CR adjustments, advance-procurement
+    # credits), so this is reported, not blocking.
+    return _check("negative_amounts", False, problems, "no negative amounts")
 
 
 def check_department_summary(
@@ -82,7 +86,7 @@ def check_department_summary(
     """Each account's sum, and the two grand totals, vs the PDF's department summary rows."""
     rows: dict[str, PdfRow] = {}
     for page in pages:
-        if page.account is None and page.section == DEPARTMENT_SECTION:
+        if page.account is None and page.section in DEPARTMENT_SECTIONS:
             for row in page.rows:
                 rows.setdefault(normalize_header(row.label), row)  # first occurrence = component summary
     if not rows:
@@ -93,9 +97,11 @@ def check_department_summary(
     for r in records:
         by_account[r.appropriation_account].append(r)
     for code, recs in sorted(by_account.items()):
-        row = rows.get(normalize_header(accounts[code].title))
+        # match on the title this release uses (titles change, e.g. 0130D Defense Health Program)
+        titles = {recs[0].appropriation_title, *accounts[code].titles}
+        row = next((rows[normalize_header(t)] for t in titles if normalize_header(t) in rows), None)
         if row is None:
-            problems.append(f"{code} {accounts[code].title!r}: no row on the department summary page")
+            problems.append(f"{code} {recs[0].appropriation_title!r}: no row on the department summary page")
             continue
         compared += 1
         problems += [f"{code}: {d}" for d in _diff(row.amounts, _sum(recs, headers), headers)]
@@ -134,9 +140,12 @@ def check_section_subtotals(
         recs = in_section.get((page.account, page.section_id), [])
         for row in page.rows:
             if row.kind == "subtotal":
-                subset = [r for r in recs if normalize_header(r.budget_activity_title) == normalize_header(row.label)]
+                subset = [r for r in recs if r.budget_activity == row.budget_activity]
                 if not subset:
-                    problems.append(f"page {page.page_number}: subtotal {row.label!r} matches no budget activity of {page.account}")
+                    problems.append(
+                        f"page {page.page_number}: subtotal {row.label!r} (BA {row.budget_activity}) "
+                        f"has no lines in {page.account} [{page.section_id}]"
+                    )
                     continue
             elif row.kind == "total":
                 subset = recs
@@ -195,12 +204,19 @@ def check_unmatched_pdf_rows(links: LinkResult) -> CheckResult:
     return _check("unmatched_pdf_rows", False, links.unmatched_pdf_rows, "every PDF line row matched an Excel line")
 
 
+def check_unlabeled_pdf_rows(pages: list[PdfPage]) -> CheckResult:
+    problems = [
+        f"page {p.page_number}: amounts {r.amounts} with no label" for p in pages for r in p.rows if r.kind == "unlabeled"
+    ]
+    return _check("unlabeled_pdf_rows", False, problems, "every PDF amount row has a label")
+
+
 def check_account_config(records: list[LineItemRecord], accounts: dict[str, Account]) -> CheckResult:
     problems = set()
     for r in records:
         a = accounts[r.appropriation_account]
-        if normalize_header(r.appropriation_title) != normalize_header(a.title):
-            problems.add(f"{a.code}: Excel title {r.appropriation_title!r} vs config {a.title!r}")
+        if normalize_header(r.appropriation_title) not in {normalize_header(t) for t in a.titles}:
+            problems.add(f"{a.code}: Excel title {r.appropriation_title!r} is not a known title {a.titles}")
         if r.include_in_toa != a.in_rdte_title:
             problems.add(f"{a.code}: Include In TOA={'Y' if r.include_in_toa else 'N'} but config in_rdte_title={a.in_rdte_title}")
     return _check("account_config", False, sorted(problems), "account titles and TOA flags agree with config")
@@ -218,7 +234,7 @@ def run_checks(
     return [
         check_unique_keys(records),
         check_row_arithmetic(records),
-        check_no_negative_amounts(records),
+        check_negative_amounts(records),
         check_department_summary(records, pages, accounts, headers),
         check_section_subtotals(records, pages, links, headers),
         check_expected_totals(records, expected),
@@ -226,6 +242,7 @@ def run_checks(
         check_amounts_verified(records, links),
         check_pe_consistency(links),
         check_unmatched_pdf_rows(links),
+        check_unlabeled_pdf_rows(pages),
         check_account_config(records, accounts),
     ]
 

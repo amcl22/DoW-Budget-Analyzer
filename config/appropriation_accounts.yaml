@@ -1,5 +1,6 @@
 # Appropriation account code -> service branch. An account code not listed here fails the run.
 # in_rdte_title: false for accounts the R-1 lists under "Not Included in the RDT&E Title".
+# former_titles: titles the account carried in earlier releases.
 accounts:
   "2040A": {title: "Research, Development, Test and Evaluation, Army", service_branch: Army, in_rdte_title: true}
   "1319N": {title: "Research, Development, Test and Evaluation, Navy", service_branch: Navy, in_rdte_title: true}
@@ -8,6 +9,8 @@ accounts:
   "0400D": {title: "Research, Development, Test and Evaluation, Defense-Wide", service_branch: Defense-Wide, in_rdte_title: true}
   "0460D": {title: "Operational Test and Evaluation, Defense", service_branch: Defense-Wide, in_rdte_title: true}
   "3007D": {title: "Golden Dome for America Fund", service_branch: Defense-Wide, in_rdte_title: true}
-  "0130D": {title: "Combat and Operational Medicine Program", service_branch: Defense-Wide, in_rdte_title: false}
+  "0130D": {title: "Combat and Operational Medicine Program", service_branch: Defense-Wide, in_rdte_title: false,
+            former_titles: ["Defense Health Program"]}
   "0107D": {title: "Office of the Inspector General", service_branch: Defense-Wide, in_rdte_title: false}
   "0390D": {title: "Chemical Agents and Munitions Destruction, Defense", service_branch: Defense-Wide, in_rdte_title: false}
+  "4557N": {title: "National Defense Sealift Fund", service_branch: Navy, in_rdte_title: false}

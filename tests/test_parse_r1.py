@@ -41,6 +41,6 @@ def test_missing_header_fails_the_run(tmp_path, cols):
 
 def test_header_row_is_found_by_content_not_position(tmp_path, cols):
     path = _modified_copy(tmp_path, lambda ws: ws.insert_rows(1, amount=2))
-    rows = parse_r1_workbook(path, cols)
+    rows = parse_r1_workbook(path, cols).rows
     assert len(rows) == 50
     assert rows[0].row_number == 5
