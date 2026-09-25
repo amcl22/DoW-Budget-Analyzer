@@ -111,6 +111,7 @@ def fake_sources(monkeypatch):
         SourceFile("data", "xlsx", XLSX_URL), SourceFile("summary_pdf", "pdf", PDF_URL),
     ]))
     monkeypatch.setattr(cli, "fetch_sources", lambda sources, exhibit, refresh=False: _fetched())
+    monkeypatch.setattr(cli, "load_books", lambda fy, exhibit: [])   # no justification-book downloads
     monkeypatch.setattr(cli, "parser_version", lambda: "test")
 
 

@@ -292,6 +292,35 @@ def check_p1_department_summary(records: list[LineItemRecord], pages: list) -> C
     return _check("department_summary", True, problems, f"{compared} appropriation and grand totals match", compared)
 
 
+# ---------------------------------------------------------------------------------------------
+# R-2 justification books (soft: coverage depends on which books could be fetched)
+
+R2_MIN_COVERAGE = 0.90
+
+
+def r2_checks(records: list[LineItemRecord], r2, book_notes: list[str], books_by_service: dict[str, int]) -> list[CheckResult]:
+    by_service: dict[str, list] = defaultdict(list)
+    for r in records:
+        if not r.is_classified:     # classified lines have no R-2
+            by_service[r.service_branch].append(r)
+    parts, low = [], []
+    for service, recs in sorted(by_service.items()):
+        linked = sum(1 for r in recs if r2.refs.get(r.key))
+        parts.append(f"{service} {linked}/{len(recs)}")
+        # Army and Air Force/Space Force books are manual downloads; a service without books is
+        # reported in r2_books, not here
+        has_books = any(s.startswith(service.split()[0]) or service.startswith(s.split()[0])
+                        for s, n in books_by_service.items() if n)
+        if has_books and recs and linked / len(recs) < R2_MIN_COVERAGE:
+            low.append(f"{service}: {linked}/{len(recs)} lines have an R-2 section")
+    return [
+        CheckResult("r2_coverage", False, not low, "R-2 sections per service: " + ", ".join(parts), low),
+        _check("r2_amounts", False, r2.amount_mismatches, f"R-2 totals match the R-1 in {r2.sections} sections"),
+        _check("r2_unmatched_sections", False, r2.unmatched_sections, "every R-2 section matched an R-1 line"),
+        _check("r2_books", False, book_notes, f"{sum(books_by_service.values())} justification books read"),
+    ]
+
+
 def run_checks(
     records: list[LineItemRecord],
     pages: list,

@@ -21,6 +21,7 @@ class PageRef:
     amount_verified: bool
     mismatches: tuple[str, ...]
     is_primary: bool = False
+    document_url: str | None = None   # None: the exhibit's summary PDF; else a justification book
 
 
 @dataclass

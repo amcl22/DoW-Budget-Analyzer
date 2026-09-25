@@ -79,6 +79,7 @@ class LineItemRecord:
     budget_subactivity_title: str | None = None
     amounts: list[Amount] = field(default_factory=list)
     cost_elements: list[CostElement] = field(default_factory=list)
+    raw_description_text: str | None = None     # from the R-2 'A. Mission Description ...'
 
     @property
     def key(self) -> tuple[str, str, str]:

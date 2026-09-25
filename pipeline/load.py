@@ -76,7 +76,8 @@ def seed_accounts(session: Session, accounts: dict[str, Account]) -> None:
 def upsert_source_documents(
     session: Session, fetched: list[FetchedFile], fiscal_year: int, cycle: str, exhibit: str
 ) -> dict[str, SourceDocument]:
-    """Return {role: SourceDocument}, creating rows for files not seen before."""
+    """Return {role: SourceDocument} and {url: SourceDocument}, creating rows for files not seen
+    before. (Several justification books share one role, so look those up by URL.)"""
     out = {}
     for f in fetched:
         doc = session.scalar(
@@ -91,6 +92,7 @@ def upsert_source_documents(
             session.add(doc)
             session.flush()
         out[f.role] = doc
+        out[f.url] = doc
     return out
 
 
@@ -138,7 +140,12 @@ def load_line_items(
     fiscal_year: int,
     ref_kind: str = "r1_summary",
     match_method: str = "acct+ba+line+pe",
+    extra_refs: dict | None = None,
+    docs_by_url: dict[str, SourceDocument] | None = None,
+    extra_ref_kind: str = "r2_justification",
+    extra_match_method: str = "acct+ba+line+pe (R-2 header)",
 ) -> None:
+    """extra_refs: {record key: [PageRef with document_url]} from justification books."""
     program_ids = _upsert_programs(session, records)
     item_rows = [
         {
@@ -162,7 +169,7 @@ def load_line_items(
             "program_title": r.program_title,
             "include_in_toa": r.include_in_toa,
             "classification": r.classification,
-            "raw_description_text": None,
+            "raw_description_text": r.raw_description_text,
         }
         for r in records
     ]
@@ -214,6 +221,20 @@ def load_line_items(
                 "is_primary": ref.is_primary,
             }
             for ref in links.refs.get(r.key, [])
+        ]
+        ref_rows += [
+            {
+                "line_item_id": item_id,
+                "source_document_id": docs_by_url[ref.document_url].id,
+                "page_number": ref.page_number,
+                "printed_page_label": ref.printed_label,
+                "ref_kind": extra_ref_kind,
+                "section": ref.section,
+                "match_method": extra_match_method,
+                "amount_verified": ref.amount_verified,
+                "is_primary": ref.is_primary,
+            }
+            for ref in (extra_refs or {}).get(r.key, [])
         ]
     if amount_rows:
         session.execute(insert(LineItemAmount), amount_rows)

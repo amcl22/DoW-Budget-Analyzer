@@ -1,7 +1,8 @@
 """`budget` command-line entry point.
 
     budget ingest --fy 2027 --exhibit R-1|P-1 [--cycle PB2027] [--publish] [--refresh] [--force]
-    budget ingest-all [--publish]
+    budget ingest-all [--publish] [--no-books]
+    budget discover-books --fy 2027
     budget publish RUN_ID
     budget runs
     budget report RUN_ID
@@ -10,6 +11,7 @@
 from __future__ import annotations
 
 import json
+from collections import defaultdict
 from datetime import datetime, timezone
 
 import typer
@@ -26,7 +28,8 @@ from .config import (
     normalize_exhibit,
 )
 from .db.models import IngestionRun
-from .fetch import FetchError, fetch_sources
+from .fetch import FetchError, fetch_books, fetch_sources
+from .discover import discover_books, load_books, write_books
 from .exhibits import EXHIBITS
 from .load import (
     PublishError,
@@ -42,7 +45,8 @@ from .load import (
 from .normalize import NormalizeError
 from .parse_xlsx import ParseError, parse_workbook
 from .pdf_common import PdfFormatError
-from .validate import build_report, run_checks
+from .r2 import attach_r2, parse_r2_book
+from .validate import build_report, r2_checks, run_checks
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
 
@@ -72,7 +76,8 @@ def _budget_year_total(records, fy: int) -> int:
     )
 
 
-def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh: bool, force: bool) -> bool:
+def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh: bool, force: bool,
+                books: bool = True) -> bool:
     """Returns True when the release ends up validated or published."""
     ex = EXHIBITS[exhibit]
     sources = load_sources(fy, exhibit)
@@ -89,6 +94,19 @@ def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh
     by_role = {f.role: f for f in fetched}
     for f in fetched:
         typer.echo(f"  {f.role:<12} {f.path.name}  sha256 {f.sha256[:12]}")
+
+    # R-2 justification books enrich R-1 lines (descriptions, out-years, page links). They are
+    # part of the run's inputs, so they are fetched before the fingerprint is computed.
+    book_list, book_files, book_notes = [], [], []
+    if exhibit == "R-1" and books:
+        book_list = load_books(fy, "R-2")
+        if not book_list:
+            book_notes.append(f"no sources/fy{fy}_books.yaml; run `budget discover-books --fy {fy}`")
+        else:
+            typer.echo(f"Fetching {len(book_list)} R-2 justification book(s)...")
+            book_files, book_notes = fetch_books(book_list, fy, "R-2", refresh=refresh)
+            typer.echo(f"  {len(book_files)} book(s) available, {len(book_notes)} note(s)")
+    fetched = fetched + book_files
 
     cols = load_column_map(exhibit, cycle)
     accounts = load_accounts()
@@ -129,6 +147,24 @@ def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh
 
         links = ex.link(records, pages, cols)
         checks = run_checks(records, pages, links, cols, accounts, load_expected_totals(cycle, exhibit), exhibit)
+
+        r2 = None
+        if exhibit == "R-1" and books:
+            service_of = {b.url: b.service for b in book_list}
+            sections, books_by_service = [], defaultdict(int)
+            for f in book_files:
+                try:
+                    sections += parse_r2_book(f.path, f.url)
+                    books_by_service[service_of[f.url]] += 1
+                except Exception as e:  # noqa: BLE001 - one unreadable book must not stop the run
+                    book_notes.append(f"{f.url}: could not be read ({e})")
+            for s in [s for s in {b.service for b in book_list} if s not in books_by_service]:
+                books_by_service[s] = 0
+            r2 = attach_r2(records, sections, fy, service_of)
+            for r in records:
+                r.raw_description_text = r2.descriptions.get(r.key)
+                r.amounts += r2.outyears.get(r.key, [])
+            checks += r2_checks(records, r2, book_notes, dict(books_by_service))
         stats = {
             "line_items": len(records),
             "cost_elements": sum(len(r.cost_elements) for r in records),
@@ -137,12 +173,17 @@ def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh
             "page_refs": sum(len(v) for v in links.refs.values()),
             "budget_year_total_thousands": _budget_year_total(records, fy),
         }
+        if r2 is not None:
+            stats["r2_sections"] = r2.sections
+            stats["r2_linked_lines"] = sum(1 for v in r2.refs.values() if v)
+            stats["with_description"] = sum(1 for r in records if r.raw_description_text)
         report = build_report(checks, stats)
 
         # Rows are loaded even when validation fails, so a failed run can be inspected;
         # the app only reads published runs.
         load_line_items(session, run, records, links, docs["data"], docs["summary_pdf"], fy,
-                        ref_kind=ex.ref_kind, match_method=ex.match_method)
+                        ref_kind=ex.ref_kind, match_method=ex.match_method,
+                        extra_refs=r2.refs if r2 else None, docs_by_url=docs)
         run.row_count = len(records)
         _finish(session, run, "validated" if report["passed"] else "failed", report)
 
@@ -175,9 +216,10 @@ def ingest(
     publish: bool = typer.Option(False, help="Publish the run if every hard check passes"),
     refresh: bool = typer.Option(False, help="Re-download source files even if cached"),
     force: bool = typer.Option(False, help="Ingest again even if an identical validated run exists"),
+    books: bool = typer.Option(True, help="R-1: read the R-2 justification books in sources/fy{FY}_books.yaml"),
 ) -> None:
     """Fetch, parse, link, validate and load one exhibit of one budget release."""
-    if not _ingest_one(fy, exhibit, cycle, publish, refresh, force):
+    if not _ingest_one(fy, exhibit, cycle, publish, refresh, force, books):
         raise typer.Exit(1)
 
 
@@ -186,20 +228,31 @@ def ingest_all(
     publish: bool = typer.Option(False, help="Publish each run that passes every hard check"),
     refresh: bool = typer.Option(False, help="Re-download source files even if cached"),
     force: bool = typer.Option(False, help="Ingest again even if an identical validated run exists"),
+    books: bool = typer.Option(True, help="R-1: read the R-2 justification books"),
 ) -> None:
     """Every release in sources/fy*.yaml, every implemented exhibit it lists."""
     results = []
-    for path in sorted(SOURCES_DIR.glob("fy*.yaml")):
+    for path in sorted(SOURCES_DIR.glob("fy[0-9][0-9][0-9][0-9].yaml")):
         fy = int(path.stem[2:])
         listed = yaml.safe_load(path.read_text())["exhibits"]
         for exhibit in [e for e in EXHIBITS if e in listed]:
             typer.echo(f"\n=== FY{fy} {exhibit}")
-            results.append((fy, exhibit, _ingest_one(fy, exhibit, None, publish, refresh, force)))
+            results.append((fy, exhibit, _ingest_one(fy, exhibit, None, publish, refresh, force, books)))
     typer.echo("\nSummary:")
     for fy, exhibit, ok in results:
         typer.echo(f"  FY{fy} {exhibit:<4} {'ok' if ok else 'FAILED'}")
     if not all(ok for *_, ok in results):
         raise typer.Exit(1)
+
+
+@app.command("discover-books")
+def discover_books_cmd(fy: int = typer.Option(..., help="Fiscal year of the budget release")) -> None:
+    """Read the justification index pages and write sources/fy{FY}_books.yaml."""
+    books, notes = discover_books(fy)
+    path = write_books(fy, books, notes)
+    for n in notes:
+        typer.echo(f"  {n}")
+    typer.echo(f"Wrote {path.relative_to(SOURCES_DIR.parent)}")
 
 
 @app.command()

@@ -73,7 +73,17 @@ def build(name: str, fy: int, exhibit: str, keep_pages: list[int], raw: Path) ->
     print(f"{name}: {len(keep_pages)} pages, {len(keep_rows)} rows")
 
 
+def build_r2(raw: Path) -> None:
+    """First DTRA R-2 section (physical 23-29) and the first page of the next (30)."""
+    book = next((raw / "FY2027" / "R-2").glob("RDTE_DTRA_PB_2027*"))
+    with pymupdf.open(book) as doc, pymupdf.open() as sample:
+        sample.insert_pdf(doc, from_page=22, to_page=29)
+        sample.save(HERE / "r2_dtra_2027_sample.pdf", garbage=4, deflate=True)
+    print("r2_dtra_2027_sample: 8 pages")
+
+
 if __name__ == "__main__":
     raw = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/raw")
     for name, (fy, exhibit, pages) in SAMPLES.items():
         build(name, fy, exhibit, pages, raw)
+    build_r2(raw)
