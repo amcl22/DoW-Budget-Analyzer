@@ -1,0 +1,31 @@
+[project]
+name = "dow-budget-pipeline"
+version = "0.1.0"
+description = "Ingestion pipeline for DoD/DoW budget exhibits (P-1, R-1, R-2)"
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0",
+    "alembic>=1.13",
+    "psycopg[binary]>=3.1",
+    "openpyxl>=3.1",
+    "pymupdf>=1.24",
+    "pyyaml>=6.0",
+    "requests>=2.31",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+budget = "pipeline.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["pipeline*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
