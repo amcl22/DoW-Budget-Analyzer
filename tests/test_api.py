@@ -179,3 +179,47 @@ def test_hostile_query_text_is_just_text(client):
     for q in ["'; DROP TABLE program; --", "100%", "a_b", "\\", "or 1=1 --", "!!!"]:
         _search(client, q=q)
     assert _search(client)["total"] == 59
+
+
+# --- program detail and watch (step 5)
+
+
+def test_program_detail_procurement(client):
+    d = client.get("/api/programs/2031A:5757A05111").json()
+    assert d["program"]["exhibit_family"] == "PROC"
+    assert d["latest_cycle"] == "PB2027" and d["releases"] == ["PB2027"]
+    series = {s["fiscal_year"]: s for s in d["series"]}
+    assert (series[2025]["amount_thousands"], series[2025]["quantity"], series[2025]["amount_type"]) == (557399, 31, "actual")
+    assert series[2026]["change_pct"] == pytest.approx((361669 - 557399) / 557399)
+    assert series[2026]["flagged"] and series[2027]["flagged"]
+    assert {s["page_number"] for s in d["sources"]} == {5, 6}          # the page pair
+    assert [e["cost_type_title"] for e in d["cost_elements"]] == ["Weapon System Cost", "Less: Advance Procurement (PY)"]
+    assert d["watched"] is False
+
+
+def test_program_detail_rdte_with_description(client):
+    d = client.get("/api/programs/0601102A").json()
+    assert d["program"]["exhibit_family"] == "RDTE" and d["cost_elements"] == []
+    assert d["description"]["raw_description_text"] == DESCRIPTION
+    assert [s["fiscal_year"] for s in d["series"]] == [2025, 2026, 2027]
+    assert all(isinstance(s["amount_thousands"], int) for s in d["series"])
+
+
+def test_program_not_found(client):
+    assert client.get("/api/programs/NOPE").status_code == 404
+    assert client.put("/api/programs/NOPE/watch").status_code == 404
+
+
+def test_watch_toggle_is_idempotent_and_listed(client):
+    key = "0601102A"
+    assert client.put(f"/api/programs/{key}/watch").json()["watched"] is True
+    assert client.put(f"/api/programs/{key}/watch").json()["watched"] is True     # no duplicate
+    watches = client.get("/api/watches").json()
+    assert [w["program_key"] for w in watches] == [key]
+    assert watches[0]["budget_year_amount"] == 215322
+    assert client.get(f"/api/programs/{key}").json()["watched"] is True
+    [row] = [r for r in _search(client, q=key)["results"] if r["program_element"] == key]
+    assert row["watched"] is True
+    client.delete(f"/api/programs/{key}/watch")
+    assert client.get("/api/watches").json() == []
+    assert client.delete(f"/api/programs/{key}/watch").status_code == 200       # already gone: fine

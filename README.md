@@ -1,7 +1,7 @@
 # DoW-Budget-Analyzer
 
 Internal tool for searching and tracking DoD/DoW budget line items (spec: `01-spec.md`,
-sources: `02-data-sources.md`). **Current state: Steps 1–4 of the build sequence**, meaning ingestion plus the search and browse app. Ingestion
+sources: `02-data-sources.md`). **Current state: Steps 1–5 of the build sequence**, meaning ingestion, the search and browse app, and program pages. Ingestion
 covers R-1 (RDT&E) and P-1 (Procurement) for FY2024–FY2027, plus the R-2 justification books
 that can be fetched automatically. The design is in `docs/step1-plan.md`; what Step 3 added,
 and what the data looks like, is in `docs/step3-report.md`.
@@ -44,7 +44,19 @@ uvicorn api.main:app --port 8000                  # API at /api, app at http://l
   (the R-2 page when there is one). Also an **Export CSV** of the current search.
 - **Shareable state:** the search and filters live in the URL, so copying the address shares a
   result list.
-- **API docs** are at `/api/docs`: `GET /api/search`, `/api/search.csv` and `/api/facets`.
+- **Program pages** (`/program/<PE>` or `/program/<account>:<BLI>`, linked from every result):
+  - **Summary:** budget year, current and prior year, plus the R-2 out-year plan.
+  - **Funding history chart:** the best available figure per fiscal year, shaded by how firm it
+    is (actual, enacted, request, estimate).
+  - **By-release table:** how each year's figure moved across budget releases, with
+    year-over-year change and ±20% flagged.
+  - **Detail:** the R-2 mission description, and for procurement the cost breakdown and
+    quantities.
+  - **Sources:** every source page in every release.
+  - **Watch toggle:** pins the program to the team watchlist (`/api/watches`). Personal
+    watchlists come with accounts in step 6.
+- **API docs** are at `/api/docs`: `GET /api/search`, `/api/search.csv`, `/api/facets`, `/api/programs/{key}`,
+  `PUT`/`DELETE /api/programs/{key}/watch` and `/api/watches`.
 
 ## What `ingest` does
 

@@ -59,3 +59,25 @@ def test_no_horizontal_scroll_on_phone(page):
     page.goto(BASE)
     page.wait_for_selector("table.results")
     assert page.evaluate("document.documentElement.scrollWidth") <= 390
+
+
+def test_program_page_chart_history_and_watch(page):
+    page.goto(f"{BASE}/?q=0604181C")
+    page.wait_for_selector("table.results tbody tr")
+    page.locator(".program .title a").first.click()
+    page.wait_for_selector(".chart svg .bar")
+    assert "/program/" in page.url
+    assert page.locator(".legend li").count() >= 2
+    page.locator(".chart .bar").last.hover()
+    assert "FY" in page.inner_text(".tooltip")
+    assert page.locator(".matrix tbody tr").count() >= 3
+    assert page.locator(".refs a").count() >= 1
+    watch = page.locator("button.watch")
+    before = watch.get_attribute("aria-pressed")
+    watch.click()
+    page.wait_for_function(f"document.querySelector('button.watch').getAttribute('aria-pressed') !== '{before}'")
+    watch.click()      # restore
+    page.wait_for_function(f"document.querySelector('button.watch').getAttribute('aria-pressed') === '{before}'")
+    page.go_back()
+    page.wait_for_selector("table.results")
+    assert page.input_value("input[type=search]") == "0604181C"

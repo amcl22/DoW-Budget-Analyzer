@@ -115,6 +115,8 @@ def _select(p: SearchParams) -> tuple[str, dict]:
                 ORDER BY (s.ref_kind IN ('r2_justification', 'p40_justification')) DESC, s.is_primary DESC,
                          s.page_number LIMIT 1) AS source_kind,
                (f.raw_description_text IS NOT NULL) AS has_description,
+               EXISTS (SELECT 1 FROM program_watch w WHERE w.program_id = f.program_id AND w.user_id IS NULL)
+                   AS watched,
                {CHANGE_PCT} AS change_pct,
                ({rank}) AS rank,
                CASE WHEN f.raw_description_text IS NULL THEN NULL ELSE {snippet} END AS snippet

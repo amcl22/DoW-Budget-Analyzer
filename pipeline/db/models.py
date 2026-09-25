@@ -214,3 +214,18 @@ class LineItemSourceRef(Base):
     amount_verified: Mapped[bool] = mapped_column(Boolean)
     # the preferred link when a line appears in several sections (agency detail over combined)
     is_primary: Mapped[bool] = mapped_column(Boolean)
+
+
+class ProgramWatch(Base):
+    """A program pinned to the dashboard. user_id NULL = the shared team watchlist."""
+
+    __tablename__ = "program_watch"
+    __table_args__ = (
+        Index("uq_program_watch", "program_id", text("coalesce(user_id, '')"), unique=True),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"))
+    user_id: Mapped[str | None] = mapped_column(Text)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

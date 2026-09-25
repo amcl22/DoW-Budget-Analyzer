@@ -1,5 +1,6 @@
 import type { LineItem, SortKey } from "./api";
 import { FLAG_THRESHOLD, fmtCount, fmtM, fmtPct, snippetParts } from "./format";
+import { Link, programPath } from "./router";
 
 interface Props {
   rows: LineItem[];
@@ -82,7 +83,10 @@ export function ResultsTable({ rows, fiscalYear, showRelease, sort, order, searc
           {rows.map((r) => (
             <tr key={r.id}>
               <td className="program">
-                <div className="title">{r.program_title}</div>
+                <div className="title">
+                  <Link href={programPath(r.program_key)}>{r.program_title}</Link>
+                  {r.watched && <span className="watched-dot" title="On the team watchlist" aria-label="Watched">★</span>}
+                </div>
                 <div className="meta">
                   <span className="mono">{r.program_element ?? r.line_item_number}</span>
                   <span className={`tag ${r.exhibit_type === "R-1" ? "rdte" : "proc"}`}>{r.exhibit_type}</span>

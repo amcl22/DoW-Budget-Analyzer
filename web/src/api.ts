@@ -51,6 +51,7 @@ export interface LineItem {
   has_description: boolean;
   change_pct: number | null;
   snippet: string | null;
+  watched: boolean;
 }
 
 export interface SearchResponse {
@@ -111,3 +112,74 @@ export const fetchFacets = (cycle: string, signal?: AbortSignal) =>
   getJson<Facets>(`/api/facets${cycle ? `?cycle=${encodeURIComponent(cycle)}` : ""}`, signal);
 
 export const exportUrl = (q: Query) => `/api/search.csv?${toParams(q, true)}`;
+
+export type AmountType = "actual" | "enacted" | "cr" | "request" | "estimate";
+
+export interface SeriesPoint {
+  fiscal_year: number;
+  amount_thousands: number;
+  quantity: number | null;
+  amount_type: AmountType;
+  source_cycle: string;
+  change_pct: number | null;
+  flagged: boolean;
+}
+
+export interface HistoryRow {
+  budget_cycle: string;
+  release_fiscal_year: number;
+  funds_fiscal_year: number;
+  amount_type: AmountType;
+  amount_thousands: number;
+  quantity: number | null;
+  is_latest: boolean;
+}
+
+export interface SourceRef {
+  budget_cycle: string;
+  fiscal_year: number;
+  exhibit_type: string;
+  line_number: string;
+  appropriation_account: string;
+  budget_activity: string;
+  ref_kind: string;
+  page_number: number;
+  printed_page_label: string | null;
+  section: string | null;
+  is_primary: boolean;
+  amount_verified: boolean;
+  link: string;
+  document_url: string;
+}
+
+export interface CostElementRow {
+  line_item_id: number;
+  cost_type: string;
+  cost_type_title: string;
+  is_add: boolean;
+  amounts: Record<string, { amount_thousands: number; quantity: number | null }>;
+}
+
+export interface ProgramDetail {
+  program: { id: number; exhibit_family: "RDTE" | "PROC"; program_key: string; latest_title: string; is_classified_rollup: boolean };
+  latest_cycle: string | null;
+  latest_lines: LineItem[];
+  lines: LineItem[];
+  series: SeriesPoint[];
+  history: HistoryRow[];
+  releases: string[];
+  description: { raw_description_text: string; budget_cycle: string } | null;
+  sources: SourceRef[];
+  cost_elements: CostElementRow[];
+  watched: boolean;
+  flag_threshold: number;
+}
+
+export const fetchProgram = (key: string, signal?: AbortSignal) =>
+  getJson<ProgramDetail>(`/api/programs/${encodeURIComponent(key)}`, signal);
+
+export async function setWatch(key: string, watched: boolean): Promise<boolean> {
+  const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/watch`, { method: watched ? "PUT" : "DELETE" });
+  if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+  return ((await resp.json()) as { watched: boolean }).watched;
+}

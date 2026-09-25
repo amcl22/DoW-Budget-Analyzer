@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
@@ -19,6 +19,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from pipeline.config import database_url
 
+from .programs import get_program, program_detail, set_watch, watchlist
 from .search import MAX_PAGE_SIZE, SORTS, SearchParams, export_rows, facets, search
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -77,6 +78,43 @@ def search_endpoint(conn: Conn, params: Params) -> dict:
 def facets_endpoint(conn: Conn, cycle: str | None = None) -> dict:
     """Filter choices with line counts, for one release or all."""
     return facets(conn, cycle or None)
+
+
+@app.get("/api/programs/{key}")
+def program_endpoint(conn: Conn, key: str) -> dict:
+    """One program across every published release: funding history (best-available figure per
+    fiscal year, with year-over-year change), every release's figures, source pages, watch state.
+    key: PE number for RDT&E, 'account:BLI' for procurement."""
+    detail = program_detail(conn, key)
+    if detail is None:
+        raise HTTPException(404, f"no program {key!r}")
+    return detail
+
+
+def _watch(conn: Connection, key: str, watched: bool) -> dict:
+    program = get_program(conn, key)
+    if program is None:
+        raise HTTPException(404, f"no program {key!r}")
+    set_watch(conn, program["id"], watched)
+    conn.commit()
+    return {"program_key": key, "watched": watched}
+
+
+@app.put("/api/programs/{key}/watch")
+def watch_endpoint(conn: Conn, key: str) -> dict:
+    """Pin a program to the team watchlist (personal watchlists arrive with accounts)."""
+    return _watch(conn, key, True)
+
+
+@app.delete("/api/programs/{key}/watch")
+def unwatch_endpoint(conn: Conn, key: str) -> dict:
+    return _watch(conn, key, False)
+
+
+@app.get("/api/watches")
+def watches_endpoint(conn: Conn) -> list[dict]:
+    """The team watchlist with each program's latest-release totals."""
+    return watchlist(conn)
 
 
 EXPORT_COLUMNS = [
