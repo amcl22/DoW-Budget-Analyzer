@@ -5,7 +5,7 @@ import pytest
 from pipeline.config import load_accounts, load_column_map
 from pipeline.link_pages import link_line_items
 from pipeline.normalize import normalize_rows
-from pipeline.parse_r1 import parse_r1_workbook
+from pipeline.parse_xlsx import parse_workbook
 from pipeline.pdf_r1 import parse_r1_pdf
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -26,7 +26,7 @@ def accounts():
 
 @pytest.fixture(scope="session")
 def raw_rows(cols):
-    return parse_r1_workbook(SAMPLE_XLSX, cols).rows
+    return parse_workbook(SAMPLE_XLSX, cols).rows
 
 
 @pytest.fixture(scope="session")

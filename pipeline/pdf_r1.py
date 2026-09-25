@@ -27,6 +27,7 @@ from .pdf_common import (
     assign_section_ids,
     group_lines,
     header_band,
+    header_bottom,
     is_number,
     map_columns,
     page_header_meta,
@@ -111,7 +112,7 @@ def parse_r1_page(page_number: int, words: list[Word], page_height: float, pdf_c
         return page
     headers = map_columns(cols, pdf_columns, page_number)
     lay = _layout(band, cols)
-    header_bottom = max(w.y0 for w in band)
+    bottom = header_bottom(cols)
     footer_y = page_height * 0.9
 
     last: PdfRow | None = None
@@ -124,7 +125,7 @@ def parse_r1_page(page_number: int, words: list[Word], page_height: float, pdf_c
 
     for line in lines:
         y = line[0].y0
-        if y <= header_bottom + 1 or y >= footer_y:
+        if y <= bottom + 1 or y >= footer_y:
             continue
         line = [w for w in line if w.text != "UNCLASSIFIED"]
         if not line:

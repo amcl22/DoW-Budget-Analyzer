@@ -1,0 +1,100 @@
+# Column map for p1_display.xlsx, keyed by budget cycle. See r1_columns.yaml for the
+# amount type/category vocabulary. Each amount column names its paired quantity column.
+# The P-1 has no Include In TOA column: accounts are in the procurement total unless
+# config/appropriation_accounts.yaml lists P-1 under outside_title.
+# pdf_columns is ORDERED: P-1 detail pages label columns only as Qty/Cost (and split wide
+# tables across page pairs), so detail-page columns are matched by position. Summary pages
+# print full labels, which must match the keys here.
+_p1_fields: &p1_fields
+  appropriation_account:    "Account"
+  appropriation_title:      "Account Title"
+  organization:             "Organization"
+  budget_activity:          "Budget Activity"
+  budget_activity_title:    "Budget Activity Title"
+  line_number:              "Line Number"
+  budget_subactivity:       "BSA"
+  budget_subactivity_title: "Budget SubActivity (BSA) Title"
+  line_item_number:         "Budget Line Item"
+  cost_type:                "Cost Type"
+  cost_type_title:          "Cost Type Title"
+  add_non_add:              "Add/Non-Add"
+  classification:           "Classification"
+
+PB2027:
+  sheet: "Exhibit P-1"
+  header_row_contains: ["Account", "Budget Line Item", "Cost Type"]
+  fields:
+    <<: *p1_fields
+    program_title: "Budget Line Item (BLI) Title"
+  amounts:
+    - {header: "FY 2025 Actuals Amount", quantity: "FY 2025 Actuals Quantity", fy: 2025, type: actual, category: discretionary}
+    - {header: "FY 2025 Reconciliation Amount", quantity: "FY 2025 Reconcilation Quantity", fy: 2025, type: actual, category: reconciliation}
+    - {header: "FY 2025 Total Amount", quantity: "FY 2025 Total Quantity", fy: 2025, type: actual, category: total}
+    - {header: "FY 2026 Discretionary Enacted Amount", quantity: "FY 2026 Discretionary Enacted Quantity", fy: 2026, type: enacted, category: discretionary}
+    - {header: "FY 2026 PL 119-21 Spend Plan Amount", quantity: "FY 2026 PL 119-21 Spend Plan Quantity", fy: 2026, type: enacted, category: spend_plan}
+    - {header: "FY 2026 Total Amount", quantity: "FY 2026 Total Quantity", fy: 2026, type: enacted, category: total}
+    - {header: "FY 2027 Discretionary Request Amount", quantity: "FY 2027 Discretionary Request Quantity", fy: 2027, type: request, category: discretionary}
+    - {header: "FY 2027 Mandatory Amount", quantity: "FY 2027 Mandatory Quantity", fy: 2027, type: request, category: mandatory}
+    - {header: "FY 2027 Total Amount", quantity: "FY 2027 Total Quantity", fy: 2027, type: request, category: total}
+  pdf_columns:   # in PDF column order: summary-page label -> Excel amount header
+    "FY 2025 Actuals": "FY 2025 Total Amount"
+    "FY 2026 Discretionary Enacted": "FY 2026 Discretionary Enacted Amount"
+    "FY 2026 PL 119-21 Spend Plan": "FY 2026 PL 119-21 Spend Plan Amount"
+    "FY 2026 Total": "FY 2026 Total Amount"
+    "FY 2027 Discretionary Request": "FY 2027 Discretionary Request Amount"
+    "FY 2027 Mandatory Request": "FY 2027 Mandatory Amount"
+    "FY 2027 Total": "FY 2027 Total Amount"
+
+PB2026:
+  sheet: "Exhibit P-1"
+  header_row_contains: ["Account", "Budget Line Item", "Cost Type"]
+  fields:
+    <<: *p1_fields
+    program_title: "Budget Line Item (BLI) Title"
+  amounts:
+    - {header: "FY 2024 Actuals Amount", quantity: "FY 2024 Actuals Quantity", fy: 2024, type: actual, category: total}
+    - {header: "FY 2025 Enacted Amount", quantity: "FY 2025 Enacted Quantity", fy: 2025, type: enacted, category: total}
+    - {header: "FY 2026 Disc Request Amount", quantity: "FY 2026 Disc Request Quantity", fy: 2026, type: request, category: discretionary}
+    - {header: "FY 2026 Reconciliation Request Amount", quantity: "FY 2026 Reconciliation Request Quantity", fy: 2026, type: request, category: reconciliation}
+    - {header: "FY 2026 Total Amount", quantity: "FY 2026 Total Quantity", fy: 2026, type: request, category: total}
+  pdf_columns:   # in PDF column order: summary-page label -> Excel amount header
+    "FY 2024 Actuals": "FY 2024 Actuals Amount"
+    "FY 2025 Enacted": "FY 2025 Enacted Amount"
+    "FY 2026 Disc Request": "FY 2026 Disc Request Amount"
+    "FY 2026 Reconciliation Request": "FY 2026 Reconciliation Request Amount"
+    "FY 2026 Total": "FY 2026 Total Amount"
+
+PB2025:
+  sheet: "Exhibit P-1"
+  header_row_contains: ["Account", "Budget Line Item", "Cost Type"]
+  fields:
+    <<: *p1_fields
+    program_title: "Budget Line Item (BLI) Title"
+  amounts:
+    - {header: "FY 2023 Actuals Amount", quantity: "FY 2023 Actuals Quantity", fy: 2023, type: actual, category: total}
+    - {header: "FY 2024 PB Request with CR Adjustments Amount*", quantity: "FY 2024 PB Request with CR Adjustments Quantity", fy: 2024, type: cr, category: total}
+    - {header: "FY 2025 Request Amount", quantity: "FY 2025 Request Quantity", fy: 2025, type: request, category: total}
+  pdf_columns:   # in PDF column order: summary-page label -> Excel amount header
+    "FY 2023 Actuals": "FY 2023 Actuals Amount"
+    "FY 2024 PB Request with CR Adjustments": "FY 2024 PB Request with CR Adjustments Amount*"
+    "FY 2025 Request": "FY 2025 Request Amount"
+
+PB2024:
+  sheet: "Exhibit P-1"
+  header_row_contains: ["Account", "Budget Line Item", "Cost Type"]
+  fields:
+    <<: *p1_fields
+    program_title: "Program Element/Budget Line Item (BLI) Title"
+  amounts:
+    - {header: "FY 2022 Actuals Amount", quantity: "FY 2022 Actuals Quantity", fy: 2022, type: actual, category: total}
+    - {header: "FY 2023 Less Supplementals Enacted Amount", quantity: "FY 2023 Less Supplementals Enacted Quantity", fy: 2023, type: enacted, category: discretionary}
+    - {header: "FY 2023 Supplementals Enacted Amount*", quantity: "FY 2023 Supplementals Enacted Quantity", fy: 2023, type: enacted, category: supplemental}
+    - {header: "FY 2023 Total Enacted Amount", quantity: "FY 2023 Total Enacted Quantity", fy: 2023, type: enacted, category: total}
+    - {header: "FY 2024 Request Amount", quantity: "FY 2024 Request Quantity", fy: 2024, type: request, category: total}
+  pdf_columns:   # in PDF column order: summary-page label -> Excel amount header
+    # the FY2024 P-1 prints the FY2023 columns Total, Supplementals, Less Supplementals
+    "FY 2022 Actuals": "FY 2022 Actuals Amount"
+    "FY 2023 Total Enacted": "FY 2023 Total Enacted Amount"
+    "FY 2023 Supplementals Enacted": "FY 2023 Supplementals Enacted Amount*"
+    "FY 2023 Less Supplementals Enacted": "FY 2023 Less Supplementals Enacted Amount"
+    "FY 2024 Request": "FY 2024 Request Amount"

@@ -15,7 +15,8 @@ import pymupdf
 from .config import normalize_header
 
 SAME_LINE_TOLERANCE = 2.5   # words within this many points vertically share a text line
-HEADER_DEPTH = 32.0         # stacked header labels span at most this far below the first 'FY'
+HEADER_DEPTH = 42.0         # stacked header labels (up to 4 lines) span at most this far below the first 'FY'
+                            # (first data rows start >= 48pt below it in every layout seen)
 PHRASE_GAP = 7.0            # words on one line closer than this belong to the same header phrase
                             # (word spacing is ~4.8pt; adjacent columns can be only ~9pt apart)
 COLUMN_TOLERANCE = 30.0     # max distance between an amount's right edge and its header's
@@ -41,6 +42,13 @@ class Column:
     label: str          # header words joined top-to-bottom, e.g. 'FY 2026 PL 119-21 Spend Plan'
     x0: float
     x1: float
+    bottom: float = 0.0  # y of the column label's lowest word
+
+
+def header_bottom(cols: list[Column]) -> float:
+    """Bottom of the table header. The header band can reach into the first data row on some
+    pages, so this is taken from the column labels, not from the band."""
+    return max(c.bottom for c in cols)
 
 
 @dataclass
@@ -132,7 +140,7 @@ def amount_columns(band: list[Word], top: float) -> list[Column]:
     for c in clusters:
         label = " ".join(text_of(l) for l in group_lines(c))
         if label.startswith("FY"):
-            cols.append(Column(label, min(w.x0 for w in c), max(w.x1 for w in c)))
+            cols.append(Column(label, min(w.x0 for w in c), max(w.x1 for w in c), max(w.y0 for w in c)))
     return cols
 
 

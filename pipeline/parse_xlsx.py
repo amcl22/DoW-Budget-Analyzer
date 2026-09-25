@@ -1,4 +1,5 @@
-"""Read the R-1 display workbook into raw string rows using the configured column map."""
+"""Read an exhibit display workbook (r1_display.xlsx, p1_display.xlsx) into raw string rows
+using the configured column map."""
 
 from __future__ import annotations
 
@@ -20,7 +21,7 @@ class ParseError(Exception):
 class RawRow:
     row_number: int               # 1-based row in the sheet
     fields: dict[str, str]        # canonical field -> cell text ('' when blank)
-    amounts: dict[str, str]       # Excel header -> cell text ('' when blank)
+    amounts: dict[str, str]       # Excel amount/quantity header -> cell text ('' when blank)
 
 
 @dataclass(frozen=True)
@@ -37,7 +38,7 @@ def _cell_text(value) -> str:
     return str(value).strip()
 
 
-def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> ParsedSheet:
+def parse_workbook(path: Path, cols: ExhibitColumns) -> ParsedSheet:
     wb = openpyxl.load_workbook(path, read_only=True)
     try:
         if cols.sheet not in wb.sheetnames:
@@ -65,9 +66,8 @@ def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> ParsedSheet:
     headers = [normalize_header(c) if c is not None else None for c in rows[header_idx]]
     position = {h: i for i, h in enumerate(headers) if h is not None}
 
-    mapped = {normalize_header(h) for h in cols.fields.values()} | {
-        normalize_header(a.header) for a in cols.amounts
-    }
+    amount_headers = [a.header for a in cols.amounts] + [a.quantity_header for a in cols.amounts if a.quantity_header]
+    mapped = {normalize_header(h) for h in cols.fields.values()} | {normalize_header(h) for h in amount_headers}
     missing = sorted(mapped - position.keys())
     unmapped = sorted(position.keys() - mapped)
     if missing or unmapped:
@@ -78,7 +78,7 @@ def parse_r1_workbook(path: Path, cols: ExhibitColumns) -> ParsedSheet:
         )
 
     field_pos = {f: position[normalize_header(h)] for f, h in cols.fields.items()}
-    amount_pos = {a.header: position[normalize_header(a.header)] for a in cols.amounts}
+    amount_pos = {h: position[normalize_header(h)] for h in amount_headers}
 
     out, footnotes = [], []
     for offset, row in enumerate(rows[header_idx + 1 :]):

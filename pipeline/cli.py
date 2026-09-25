@@ -1,6 +1,7 @@
 """`budget` command-line entry point.
 
-    budget ingest --fy 2027 --exhibit R-1 [--cycle PB2027] [--publish] [--refresh] [--force]
+    budget ingest --fy 2027 --exhibit R-1|P-1 [--cycle PB2027] [--publish] [--refresh] [--force]
+    budget ingest-all [--publish]
     budget publish RUN_ID
     budget runs
     budget report RUN_ID
@@ -12,10 +13,12 @@ import json
 from datetime import datetime, timezone
 
 import typer
+import yaml
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .config import (
+    SOURCES_DIR,
     load_accounts,
     load_column_map,
     load_expected_totals,
@@ -24,7 +27,7 @@ from .config import (
 )
 from .db.models import IngestionRun
 from .fetch import FetchError, fetch_sources
-from .link_pages import link_line_items
+from .exhibits import EXHIBITS
 from .load import (
     PublishError,
     find_reusable_run,
@@ -36,14 +39,12 @@ from .load import (
     seed_accounts,
     upsert_source_documents,
 )
-from .normalize import NormalizeError, normalize_rows
-from .parse_r1 import ParseError, parse_r1_workbook
-from .pdf_r1 import PdfFormatError, parse_r1_pdf
+from .normalize import NormalizeError
+from .parse_xlsx import ParseError, parse_workbook
+from .pdf_common import PdfFormatError
 from .validate import build_report, run_checks
 
 app = typer.Typer(add_completion=False, no_args_is_help=True)
-
-SUPPORTED_EXHIBITS = {"R-1"}
 
 
 def _print_report(report: dict) -> None:
@@ -64,19 +65,16 @@ def _finish(session: Session, run: IngestionRun, status: str, report: dict) -> N
     session.commit()
 
 
-@app.command()
-def ingest(
-    fy: int = typer.Option(..., help="Fiscal year of the budget release, e.g. 2027"),
-    exhibit: str = typer.Option("R-1", help="Exhibit type (only R-1 so far)"),
-    cycle: str | None = typer.Option(None, help="Budget cycle; defaults to the one in sources/fy{FY}.yaml"),
-    publish: bool = typer.Option(False, help="Publish the run if every hard check passes"),
-    refresh: bool = typer.Option(False, help="Re-download source files even if cached"),
-    force: bool = typer.Option(False, help="Ingest again even if an identical validated run exists"),
-) -> None:
-    """Fetch, parse, link, validate and load one exhibit of one budget release."""
-    exhibit = normalize_exhibit(exhibit)
-    if exhibit not in SUPPORTED_EXHIBITS:
-        raise typer.BadParameter(f"{exhibit} is not implemented yet (supported: {sorted(SUPPORTED_EXHIBITS)})")
+def _budget_year_total(records, fy: int) -> int:
+    return sum(
+        a.amount_thousands for r in records for a in r.amounts
+        if a.funds_fiscal_year == fy and a.funding_category == "total"
+    )
+
+
+def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh: bool, force: bool) -> bool:
+    """Returns True when the release ends up validated or published."""
+    ex = EXHIBITS[exhibit]
     sources = load_sources(fy, exhibit)
     cycle = cycle or sources.budget_cycle
     if cycle != sources.budget_cycle:
@@ -87,7 +85,7 @@ def ingest(
         fetched = fetch_sources(sources, exhibit, refresh=refresh)
     except (FetchError, OSError) as e:
         typer.echo(f"Fetch failed: {e}", err=True)
-        raise typer.Exit(1) from None
+        return False
     by_role = {f.role: f for f in fetched}
     for f in fetched:
         typer.echo(f"  {f.role:<12} {f.path.name}  sha256 {f.sha256[:12]}")
@@ -110,7 +108,7 @@ def ingest(
                 publish_run(session, existing.id)
                 session.commit()
                 typer.echo(f"Published run {existing.id}.")
-            return
+            return True
 
         run = IngestionRun(
             budget_cycle=cycle, exhibit_type=exhibit, status="running",
@@ -121,28 +119,30 @@ def ingest(
         typer.echo(f"Run {run.id}: parsing...")
 
         try:
-            sheet = parse_r1_workbook(by_role["data"].path, cols)
-            records = normalize_rows(sheet.rows, cols, accounts)
-            pages = parse_r1_pdf(by_role["summary_pdf"].path, cols.pdf_columns)
+            sheet = parse_workbook(by_role["data"].path, cols)
+            records = ex.normalize(sheet.rows, cols, accounts, exhibit)
+            pages = ex.parse_pdf(by_role["summary_pdf"].path, cols)
         except (ParseError, NormalizeError, PdfFormatError) as e:
             _finish(session, run, "failed", {"passed": False, "error": str(e)})
             typer.echo(f"Run {run.id} failed while parsing:\n{e}", err=True)
-            raise typer.Exit(1) from None
+            return False
 
-        links = link_line_items(records, pages, cols)
-        checks = run_checks(records, pages, links, cols, accounts, load_expected_totals(cycle, exhibit))
+        links = ex.link(records, pages, cols)
+        checks = run_checks(records, pages, links, cols, accounts, load_expected_totals(cycle, exhibit), exhibit)
         stats = {
             "line_items": len(records),
+            "cost_elements": sum(len(r.cost_elements) for r in records),
             "excel_footnotes": sheet.footnotes,
             "pdf_pages": len(pages),
             "page_refs": sum(len(v) for v in links.refs.values()),
-            "fy_budget_year_total_thousands": sum(r.amount(f"FY {fy} Total") or 0 for r in records),
+            "budget_year_total_thousands": _budget_year_total(records, fy),
         }
         report = build_report(checks, stats)
 
         # Rows are loaded even when validation fails, so a failed run can be inspected;
         # the app only reads published runs.
-        load_line_items(session, run, records, links, docs["data"], docs["summary_pdf"], fy)
+        load_line_items(session, run, records, links, docs["data"], docs["summary_pdf"], fy,
+                        ref_kind=ex.ref_kind, match_method=ex.match_method)
         run.row_count = len(records)
         _finish(session, run, "validated" if report["passed"] else "failed", report)
 
@@ -150,13 +150,56 @@ def ingest(
         _print_report(report)
         if not report["passed"]:
             typer.echo(f"Run {run.id} FAILED validation; not publishable.", err=True)
-            raise typer.Exit(1)
+            return False
         if publish:
             publish_run(session, run.id)
             session.commit()
             typer.echo(f"Run {run.id} validated and published.")
         else:
             typer.echo(f"Run {run.id} validated. Publish with: budget publish {run.id}")
+        return True
+
+
+def _exhibit_option(value: str) -> str:
+    exhibit = normalize_exhibit(value)
+    if exhibit not in EXHIBITS:
+        raise typer.BadParameter(f"{exhibit} is not implemented (supported: {sorted(EXHIBITS)})")
+    return exhibit
+
+
+@app.command()
+def ingest(
+    fy: int = typer.Option(..., help="Fiscal year of the budget release, e.g. 2027"),
+    exhibit: str = typer.Option("R-1", help="Exhibit type: R-1 or P-1", callback=_exhibit_option),
+    cycle: str | None = typer.Option(None, help="Budget cycle; defaults to the one in sources/fy{FY}.yaml"),
+    publish: bool = typer.Option(False, help="Publish the run if every hard check passes"),
+    refresh: bool = typer.Option(False, help="Re-download source files even if cached"),
+    force: bool = typer.Option(False, help="Ingest again even if an identical validated run exists"),
+) -> None:
+    """Fetch, parse, link, validate and load one exhibit of one budget release."""
+    if not _ingest_one(fy, exhibit, cycle, publish, refresh, force):
+        raise typer.Exit(1)
+
+
+@app.command("ingest-all")
+def ingest_all(
+    publish: bool = typer.Option(False, help="Publish each run that passes every hard check"),
+    refresh: bool = typer.Option(False, help="Re-download source files even if cached"),
+    force: bool = typer.Option(False, help="Ingest again even if an identical validated run exists"),
+) -> None:
+    """Every release in sources/fy*.yaml, every implemented exhibit it lists."""
+    results = []
+    for path in sorted(SOURCES_DIR.glob("fy*.yaml")):
+        fy = int(path.stem[2:])
+        listed = yaml.safe_load(path.read_text())["exhibits"]
+        for exhibit in [e for e in EXHIBITS if e in listed]:
+            typer.echo(f"\n=== FY{fy} {exhibit}")
+            results.append((fy, exhibit, _ingest_one(fy, exhibit, None, publish, refresh, force)))
+    typer.echo("\nSummary:")
+    for fy, exhibit, ok in results:
+        typer.echo(f"  FY{fy} {exhibit:<4} {'ok' if ok else 'FAILED'}")
+    if not all(ok for *_, ok in results):
+        raise typer.Exit(1)
 
 
 @app.command()

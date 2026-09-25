@@ -1,16 +1,46 @@
 # Appropriation account code -> service branch. An account code not listed here fails the run.
-# in_rdte_title: false for accounts the R-1 lists under "Not Included in the RDT&E Title".
+# outside_title: exhibits that list the account outside their title, e.g. the R-1's
+#   "Other RDT&E Budget Activities Not Included in the RDT&E Title".
 # former_titles: titles the account carried in earlier releases.
 accounts:
-  "2040A": {title: "Research, Development, Test and Evaluation, Army", service_branch: Army, in_rdte_title: true}
-  "1319N": {title: "Research, Development, Test and Evaluation, Navy", service_branch: Navy, in_rdte_title: true}
-  "3600F": {title: "Research, Development, Test and Evaluation, Air Force", service_branch: Air Force, in_rdte_title: true}
-  "3620F": {title: "Research, Development, Test, and Evaluation, Space Force", service_branch: Space Force, in_rdte_title: true}
-  "0400D": {title: "Research, Development, Test and Evaluation, Defense-Wide", service_branch: Defense-Wide, in_rdte_title: true}
-  "0460D": {title: "Operational Test and Evaluation, Defense", service_branch: Defense-Wide, in_rdte_title: true}
-  "3007D": {title: "Golden Dome for America Fund", service_branch: Defense-Wide, in_rdte_title: true}
-  "0130D": {title: "Combat and Operational Medicine Program", service_branch: Defense-Wide, in_rdte_title: false,
-            former_titles: ["Defense Health Program"]}
-  "0107D": {title: "Office of the Inspector General", service_branch: Defense-Wide, in_rdte_title: false}
-  "0390D": {title: "Chemical Agents and Munitions Destruction, Defense", service_branch: Defense-Wide, in_rdte_title: false}
-  "4557N": {title: "National Defense Sealift Fund", service_branch: Navy, in_rdte_title: false}
+  # --- RDT&E (R-1)
+  "2040A": {title: "Research, Development, Test and Evaluation, Army", service_branch: Army}
+  "1319N": {title: "Research, Development, Test and Evaluation, Navy", service_branch: Navy}
+  "3600F": {title: "Research, Development, Test and Evaluation, Air Force", service_branch: Air Force}
+  "3620F": {title: "Research, Development, Test, and Evaluation, Space Force", service_branch: Space Force}
+  "0400D": {title: "Research, Development, Test and Evaluation, Defense-Wide", service_branch: Defense-Wide}
+  "0460D": {title: "Operational Test and Evaluation, Defense", service_branch: Defense-Wide}
+  "3007D": {title: "Golden Dome for America Fund", service_branch: Defense-Wide}
+  "0130D": {title: "Combat and Operational Medicine Program", service_branch: Defense-Wide,
+            outside_title: ["R-1"], former_titles: ["Defense Health Program"]}
+  "0107D": {title: "Office of the Inspector General", service_branch: Defense-Wide, outside_title: ["R-1"]}
+  "4557N": {title: "National Defense Sealift Fund", service_branch: Navy, outside_title: ["R-1"]}
+  # in both exhibits: outside the RDT&E title in the R-1, inside the procurement total in the P-1
+  "0390D": {title: "Chemical Agents and Munitions Destruction, Defense", service_branch: Defense-Wide,
+            outside_title: ["R-1"]}
+
+  # --- Procurement (P-1)
+  "2031A": {title: "Aircraft Procurement, Army", service_branch: Army}
+  "2032A": {title: "Missile Procurement, Army", service_branch: Army}
+  "2033A": {title: "Procurement of Weapons and Tracked Combat Vehicles, Army", service_branch: Army}
+  "2034A": {title: "Procurement of Ammunition, Army", service_branch: Army}
+  "2035A": {title: "Other Procurement, Army", service_branch: Army}
+  "1506N": {title: "Aircraft Procurement, Navy", service_branch: Navy}
+  "1507N": {title: "Weapons Procurement, Navy", service_branch: Navy}
+  "1508N": {title: "Procurement of Ammunition, Navy and Marine Corps", service_branch: Navy}
+  "1611N": {title: "Shipbuilding and Conversion, Navy", service_branch: Navy}
+  "1612N": {title: "National Sea-Based Det Fd", service_branch: Navy}
+  "1613N": {title: "Maritime Industrial Base Fund", service_branch: Navy}
+  "1810N": {title: "Other Procurement, Navy", service_branch: Navy}
+  "1109N": {title: "Procurement, Marine Corps", service_branch: Navy}
+  "3010F": {title: "Aircraft Procurement, Air Force", service_branch: Air Force}
+  "3011F": {title: "Procurement of Ammunition, Air Force", service_branch: Air Force}
+  "3020F": {title: "Missile Procurement, Air Force", service_branch: Air Force}
+  "3080F": {title: "Other Procurement, Air Force", service_branch: Air Force}
+  "3022F": {title: "Procurement, Space Force", service_branch: Space Force}
+  "0300D": {title: "Procurement, Defense-Wide", service_branch: Defense-Wide}
+  "0350D": {title: "National Guard and Reserve Equipment", service_branch: Defense-Wide}
+  "0360D": {title: "Defense Production Act Purchases", service_branch: Defense-Wide}
+  "0361D": {title: "Defense Production Act Program Account", service_branch: Defense-Wide}
+  "0362D": {title: "Defense Strategic Capital Credit Program", service_branch: Defense-Wide}
+  "4387D": {title: "Defense Production Act, Direct Loan Financing Account", service_branch: Defense-Wide}
