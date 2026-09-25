@@ -1,6 +1,6 @@
 # Step 1 Plan — Data Model + FY2027 R-1 Proof-of-Concept Ingestion
 
-Status: **implemented.** All decisions in §8 were approved with the defaults. See §9 for what
+Status: **implemented** (Step 3, covering all years, P-1 and the R-2 books, is in `docs/step3-report.md`). All decisions in §8 were approved with the defaults. See §9 for what
 changed during the build and for the results.
 Scope: spec §6 steps 1–2, limited to **one release (PB2027)** of **one exhibit (R-1)**.
 
