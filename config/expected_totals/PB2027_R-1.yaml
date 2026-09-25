@@ -1,0 +1,25 @@
+# Hand-entered from FY2027_r1.pdf, "DoW Component Summary" (physical page 6, printed Page 1).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header. Blank in the PDF = 0.
+source: "FY2027_r1.pdf physical page 6"
+groups:
+  - label: "Total Research, Development, Test, & Evaluation"
+    include_in_toa: true
+    amounts:
+      "FY 2025 Total":                 143345996
+      "FY 2026 Discretionary Enacted": 144922309
+      "FY 2026 PL 119-21 Spend Plan":  65462721
+      "FY 2026 Total":                 210385030
+      "FY 2027 Discretionary Request": 218791608
+      "FY 2027 Mandatory Request":     124897313
+      "FY 2027 Total":                 343688921
+  - label: "Total Not in Research, Development, Test, & Evaluation"
+    include_in_toa: false
+    amounts:
+      "FY 2025 Total":                 2452098
+      "FY 2026 Discretionary Enacted": 2687376
+      "FY 2026 PL 119-21 Spend Plan":  0
+      "FY 2026 Total":                 2687376
+      "FY 2027 Discretionary Request": 1076840
+      "FY 2027 Mandatory Request":     0
+      "FY 2027 Total":                 1076840

@@ -1,6 +1,7 @@
 # Step 1 Plan — Data Model + FY2027 R-1 Proof-of-Concept Ingestion
 
-Status: **proposal for review** — no app code written yet.
+Status: **implemented.** All decisions in §8 were approved with the defaults. See §9 for what
+changed during the build and for the results.
 Scope: spec §6 steps 1–2, limited to **one release (PB2027)** of **one exhibit (R-1)**.
 
 The design below has been checked against the real source files
@@ -308,12 +309,15 @@ Soft checks (reported only): row-count delta vs. the previous run, and PEs added
 
 ## 7. Exit criteria for Step 1
 
-- [ ] `docker compose up` + `alembic upgrade head` creates the schema
-- [ ] Ingest runs end to end; running it twice gives identical DB contents
-- [ ] All hard validation checks are green
-- [ ] 20 randomly sampled deep links land on the right row (manual spot check)
-- [ ] `line_item_flat` returns spec-shaped rows, e.g. F-47 shows two lines (BA 04 and BA 05)
-- [ ] Parser, matcher and validator tests pass offline
+- [x] `alembic upgrade head` creates the schema, and `alembic check` confirms the models match
+      the migration. Tested against a local Postgres 16; `docker compose` itself was not run here.
+- [x] Ingest runs end to end in ~5 s. A re-run with identical inputs is a no-op that reuses the
+      existing run.
+- [x] All hard validation checks are green
+- [x] 20 randomly sampled deep links land on the right page with the right PE, title and FY27
+      amount (scripted check against the real PDF)
+- [x] `line_item_flat` returns spec-shaped rows; F-47 shows two lines (BA 04 p45, BA 05 p47)
+- [x] 37 offline tests pass, plus 5 DB integration tests when `TEST_DATABASE_URL` is set
 
 Estimate: 2–3 days. The riskiest parts, the format and page matching, are already de-risked
 by the prototype.
@@ -330,3 +334,42 @@ by the prototype.
    "Classified Programs – <service>" rows.
 5. **Non-RDT&E-title accounts** (DHP medical, IG, Chem Demil; $1.08B in FY27). The default is
    to ingest them but exclude them from RDT&E totals, as the PDF does.
+
+---
+
+## 9. Build notes (what changed from the plan)
+
+- **PDF amounts are checked by column, not just by presence.** Amounts are right-aligned under
+  their headers, so each amount is assigned to the column whose header's right edge is
+  nearest. All 7 PDF columns are compared on every row, which is stricter than "the FY27
+  total appears on the page."
+- **The PDF's "FY 2025 Actuals" column is the Excel's "FY 2025 Total"** (actuals +
+  reconciliation). This is mapped explicitly in `pdf_columns` in `config/r1_columns.yaml`.
+- **Some column headers carry footnote asterisks** (`FY 2026 Total*`); these are ignored
+  when matching.
+- **Sections are runs of consecutive pages, not header text.** The DEFW agency detail
+  (p97) is also headed "Defense-Wide", which collided with the combined Defense-Wide section.
+- **Defense-Wide lines get two refs.** One points at the combined detail and one at the
+  agency detail; the agency page is marked `is_primary`, and the view uses it.
+- **The run fingerprint** hashes the input files, the parser git SHA and all config files.
+  An identical re-run reuses the validated or published run; a failed run is never reused.
+- **Rows are loaded even when validation fails**, so a failed run can be inspected. Only
+  published runs appear in `line_item_flat`.
+- **Only PyMuPDF is used.** pdfplumber was dropped; see §3.
+
+**FY2027 R-1 results:**
+
+| Result | Value |
+|---|---|
+| Line items | 1,163 |
+| Page refs | 1,452 |
+| Programs | 1,133 |
+| Department and grand totals | 12, all match |
+| BA subtotals and section totals | 131, all match |
+| Lines matching the PDF on all columns | 1,163 of 1,163 |
+| Hand-entered totals | 2, match |
+| FY27 TOA | $343,688,921K |
+- **The migration is authoritative, not the DDL sketch in §4.3.** The migration is
+  `pipeline/db/migrations/versions/0001_initial_schema.py`. Compared with the sketch, it adds
+  `ingestion_run.input_fingerprint`, `line_item_source_ref.is_primary` and `line_number` in the
+  view, and drops `match_confidence`: matches are exact, and `amount_verified` covers the rest.

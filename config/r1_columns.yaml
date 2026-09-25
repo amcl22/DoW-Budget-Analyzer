@@ -1,0 +1,38 @@
+# Column map for r1_display.xlsx, keyed by budget cycle.
+# Headers are matched case- and whitespace-insensitively. Any header in the sheet that is not
+# mapped here fails the run, so a new column is never dropped silently.
+PB2027:
+  sheet: "Exhibit R-1"
+  header_row_contains: ["Account", "PE/BLI", "Line Number"]
+  fields:
+    appropriation_account: "Account"
+    appropriation_title:   "Account Title"
+    organization:          "Organization"
+    budget_activity:       "Budget Activity"
+    budget_activity_title: "Budget Activity Title"
+    line_number:           "Line Number"
+    program_element:       "PE/BLI"
+    program_title:         "Program Element/Budget Line Item (BLI) Title"
+    include_in_toa:        "Include In TOA"
+    classification:        "Classification"
+  amounts:
+    - {header: "FY 2025 Actuals",               fy: 2025, type: actual,  category: discretionary}
+    - {header: "FY 2025 Reconciliation",        fy: 2025, type: actual,  category: reconciliation}
+    - {header: "FY 2025 Total",                 fy: 2025, type: actual,  category: total}
+    - {header: "FY 2026 Discretionary Enacted", fy: 2026, type: enacted, category: discretionary}
+    - {header: "FY 2026 PL 119-21 Spend Plan",  fy: 2026, type: enacted, category: spend_plan}
+    - {header: "FY 2026 Total",                 fy: 2026, type: enacted, category: total}
+    - {header: "FY 2027 Discretionary Request", fy: 2027, type: request, category: discretionary}
+    - {header: "FY 2027 Mandatory Request",     fy: 2027, type: request, category: mandatory}
+    - {header: "FY 2027 Total",                 fy: 2027, type: request, category: total}
+  # PDF column label (header words joined top-to-bottom) -> Excel header it corresponds to.
+  # Note: the PDF's "FY 2025 Actuals" column prints Actuals + Reconciliation, i.e. the Excel
+  # "FY 2025 Total" column, not the Excel "FY 2025 Actuals" column.
+  pdf_columns:
+    "FY 2025 Actuals":               "FY 2025 Total"
+    "FY 2026 Discretionary Enacted": "FY 2026 Discretionary Enacted"
+    "FY 2026 PL 119-21 Spend Plan":  "FY 2026 PL 119-21 Spend Plan"
+    "FY 2026 Total":                 "FY 2026 Total"
+    "FY 2027 Discretionary Request": "FY 2027 Discretionary Request"
+    "FY 2027 Mandatory Request":     "FY 2027 Mandatory Request"
+    "FY 2027 Total":                 "FY 2027 Total"
