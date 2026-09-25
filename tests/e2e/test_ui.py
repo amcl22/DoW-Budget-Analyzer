@@ -1,7 +1,7 @@
 """Browser smoke test of the built web app. Runs only when E2E_BASE_URL points at a running
 server with data loaded (e.g. `uvicorn api.main:app` after `budget ingest-all --publish`):
 
-    E2E_BASE_URL=http://localhost:8000 pytest tests/e2e
+    E2E_BASE_URL=http://localhost:8000 E2E_ACCESS_TOKEN=<the server's ACCESS_TOKEN> pytest tests/e2e
 Set E2E_CHROMIUM to a Chromium binary if Playwright's own browser is not installed.
 """
 
@@ -19,6 +19,10 @@ def page():
     with playwright.sync_playwright() as p:
         browser = p.chromium.launch(executable_path=os.environ.get("E2E_CHROMIUM") or None)
         pg = browser.new_page(viewport={"width": 1400, "height": 900})
+        # enter through the team link once; the cookie carries the rest of the session
+        token = os.environ.get("E2E_ACCESS_TOKEN")
+        if token:
+            pg.goto(f"{BASE}/?k={token}")
         errors = []
         pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
         pg.errors = errors
@@ -81,3 +85,31 @@ def test_program_page_chart_history_and_watch(page):
     page.go_back()
     page.wait_for_selector("table.results")
     assert page.input_value("input[type=search]") == "0604181C"
+
+
+def test_watchlist_page(page):
+    page.goto(f"{BASE}/program/0604181C")
+    page.wait_for_selector("button.watch")
+    was_watched = page.get_attribute("button.watch", "aria-pressed") == "true"
+    if not was_watched:
+        page.click("button.watch")
+        page.wait_for_selector("button.watch.on")
+    page.get_by_role("link", name="★ Team watchlist").click()
+    page.wait_for_selector("text=Hypersonic Defense")
+    assert page.locator(".spark").count() >= 1
+    if not was_watched:          # leave the watchlist as it was
+        page.locator("tr", has_text="Hypersonic Defense").get_by_role("button", name="Remove").click()
+        page.wait_for_timeout(500)
+
+
+def test_private_without_the_link(page):
+    """A fresh browser context, without the cookie, sees the private page."""
+    if not os.environ.get("E2E_ACCESS_TOKEN"):
+        pytest.skip("server may be running open (no E2E_ACCESS_TOKEN)")
+    ctx = page.context.browser.new_context()
+    try:
+        fresh = ctx.new_page()
+        resp = fresh.goto(f"{BASE}/program/0604181C")
+        assert resp.status == 401 and "private" in fresh.inner_text("h1").lower()
+    finally:
+        ctx.close()

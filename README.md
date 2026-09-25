@@ -1,7 +1,7 @@
 # DoW-Budget-Analyzer
 
 Internal tool for searching and tracking DoD/DoW budget line items (spec: `01-spec.md`,
-sources: `02-data-sources.md`). **Current state: Steps 1–5 of the build sequence**, meaning ingestion, the search and browse app, and program pages. Ingestion
+sources: `02-data-sources.md`). **Current state: Steps 1–6 of the build sequence**, meaning ingestion, the search and browse app, program pages, and link-only access with a team watchlist. There are no user accounts: anyone with the team link can use the app, and nobody else can. Ingestion
 covers R-1 (RDT&E) and P-1 (Procurement) for FY2024–FY2027, plus the R-2 justification books
 that can be fetched automatically. The design is in `docs/step1-plan.md`; what Step 3 added,
 and what the data looks like, is in `docs/step3-report.md`.
@@ -30,7 +30,8 @@ R-2 books are several hundred MB per year, so `--no-books` skips them.
 
 ```bash
 cd web && npm install && npm run build && cd ..   # builds web/dist
-uvicorn api.main:app --port 8000                  # API at /api, app at http://localhost:8000
+ACCESS_TOKEN=... uvicorn api.main:app --port 8000 # then open the link from `budget share-link`
+# local development without the link check: ALLOW_OPEN_ACCESS=1 uvicorn api.main:app
 # frontend development with hot reload: `npm run dev` in web/ (proxies /api to port 8000)
 ```
 
@@ -53,10 +54,53 @@ uvicorn api.main:app --port 8000                  # API at /api, app at http://l
   - **Detail:** the R-2 mission description, and for procurement the cost breakdown and
     quantities.
   - **Sources:** every source page in every release.
-  - **Watch toggle:** pins the program to the team watchlist (`/api/watches`). Personal
-    watchlists come with accounts in step 6.
+  - **Watch toggle:** pins the program to the team watchlist (`/watchlist`).
 - **API docs** are at `/api/docs`: `GET /api/search`, `/api/search.csv`, `/api/facets`, `/api/programs/{key}`,
   `PUT`/`DELETE /api/programs/{key}/watch` and `/api/watches`.
+
+## Sharing: link-only access
+
+The app has no logins. Access is by a **team link** that carries a secret:
+`https://<host>/?k=<secret>`.
+
+```bash
+budget new-access-token                          # generate a secret; set it as ACCESS_TOKEN on the server
+ACCESS_TOKEN=... budget share-link --base-url https://<host>   # print the link to send the team
+```
+
+- **First visit:** the server checks the secret, stores a browser cookie derived from it, and
+  redirects to the same page without `?k=`. The secret doesn't stay in the address bar or
+  browser history, and isn't sent to the external PDF sites.
+- **Everyone else** gets a "this app is private" page, and the API answers 401. Search engines
+  are told not to index anything (`robots.txt`, `X-Robots-Tag`).
+- **Revoking access:** set a new `ACCESS_TOKEN` and restart. Every old link and cookie stops
+  working; send the new link to whoever should keep access.
+- **Scripts** can send the secret in an `X-Access-Token` header.
+- **Without `ACCESS_TOKEN`** the app refuses to serve data. `ALLOW_OPEN_ACCESS=1` turns the
+  check off, for local development only.
+- **Security:** anyone who has the link is in, including anyone it's forwarded to. Share it
+  like a password, over HTTPS only. That makes it right for public budget data and a small
+  team, not for anything sensitive.
+
+**Hosting.** The `Dockerfile` builds one image with the web app and the ingestion CLI:
+
+```bash
+echo "ACCESS_TOKEN=$(budget new-access-token)" > .env
+docker compose up -d                                       # app on :8000 plus Postgres
+docker compose run --rm app budget ingest-all --publish    # load the data
+```
+
+Any container host with managed Postgres works (Render, Fly.io, Railway, Cloud Run and so
+on). Put it behind HTTPS, since the host terminates TLS and the app marks the cookie `Secure`
+from `X-Forwarded-Proto`. Then run `budget share-link` with the public URL. The image hasn't
+been built in the development environment, which had no Docker daemon.
+
+## Team watchlist
+
+`/watchlist` (the ★ link at the top) is the team dashboard from spec 4.4. It shows the
+programs anyone has watched, with current and budget-year amounts, year-over-year change
+(±20% flagged, largest moves first) and a trend sparkline. With link-only access, there is one
+shared watchlist. `GET /api/dashboard` returns the same data.
 
 ## What `ingest` does
 
@@ -113,7 +157,7 @@ Those sites block automated downloads (Akamai refuses cloud IPs). To include the
 ```bash
 pytest                                            # offline (fixtures in tests/fixtures)
 TEST_DATABASE_URL=postgresql+psycopg://... pytest # also DB and API tests; DROPS that DB's public schema
-E2E_BASE_URL=http://localhost:8000 pytest tests/e2e   # browser smoke test against a running app
+E2E_BASE_URL=http://localhost:8000 E2E_ACCESS_TOKEN=... pytest tests/e2e   # browser tests against a running app
 ```
 
 Fixtures are small cuts of the real releases. Rebuild them with

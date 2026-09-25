@@ -10,5 +10,19 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  app:
+    build: .
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql+psycopg://budget:budget@db:5432/budget
+      # the team-link secret: `budget new-access-token`, then put it in .env as ACCESS_TOKEN=...
+      ACCESS_TOKEN: ${ACCESS_TOKEN:?set ACCESS_TOKEN in .env}
+    ports:
+      - "8000:8000"
+    volumes:
+      - rawdata:/app/data   # downloaded budget files, reused across ingestion runs
+
 volumes:
   pgdata:
+  rawdata:

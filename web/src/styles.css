@@ -284,3 +284,14 @@ p.small { margin: 0 0 8px; }
   .program-head { flex-direction: column; }
   .appearances li { grid-template-columns: 1fr; gap: 2px; }
 }
+
+/* navigation, watchlist */
+.nav-link { margin-left: 12px; font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; vertical-align: middle; }
+.nav-link:hover { text-decoration: underline; }
+.crumbs { display: flex; justify-content: space-between; gap: 12px; }
+.spark { display: block; overflow: visible; }
+.spark-line { fill: none; stroke: var(--amt-enacted); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.spark-line.est { stroke: var(--amt-request); stroke-dasharray: 3 3; }
+.spark-dot { fill: var(--amt-request); stroke: var(--surface); stroke-width: 2; }
+.spark-hit { fill: transparent; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

@@ -9,7 +9,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 FLAG_THRESHOLD = 0.20                   # year-over-year change worth flagging (spec 4.2: ±20%)
-TEAM = None                             # user_id of the shared team watchlist (accounts: step 6)
+TEAM = None                             # user_id of the shared team watchlist (access is by team
+                                        # link, with no accounts, so every watch is the team's)
 FIRMNESS = {"actual": 4, "enacted": 3, "cr": 2, "request": 1, "estimate": 0}
 
 
@@ -176,3 +177,31 @@ def watchlist(conn: Connection, user_id: str | None = TEAM) -> list[dict]:
         WHERE coalesce(w.user_id, '') = coalesce(:uid, '')
         ORDER BY w.created_at DESC
     """), {"uid": user_id}).mappings()]
+
+
+def dashboard(conn: Connection) -> dict:
+    """Watched programs with their best-available funding series and the change between the
+    latest release's budget year and the year before; flagged moves first."""
+    items = []
+    for w in watchlist(conn):
+        _, series = _history(conn, w["program_id"])
+        by_year = {s["fiscal_year"]: s for s in series}
+        latest_fy = conn.execute(text(
+            "SELECT max(fiscal_year) FROM line_item_flat WHERE program_id = :pid"
+        ), {"pid": w["program_id"]}).scalar()
+        budget = by_year.get(latest_fy) if latest_fy else None
+        items.append({
+            **w,
+            "fiscal_year": latest_fy,
+            "change_pct": budget["change_pct"] if budget else None,
+            "flagged": bool(budget and budget["flagged"]),
+            "series": [{k: s[k] for k in ("fiscal_year", "amount_thousands", "amount_type")} for s in series],
+        })
+    items.sort(key=lambda i: (not i["flagged"], -abs(i["change_pct"] or 0)))
+    return {
+        "watched": items,
+        "flagged": sum(1 for i in items if i["flagged"]),
+        "budget_year_total": sum(i["budget_year_amount"] or 0 for i in items),
+        "current_year_total": sum(i["current_year_amount"] or 0 for i in items),
+        "flag_threshold": FLAG_THRESHOLD,
+    }

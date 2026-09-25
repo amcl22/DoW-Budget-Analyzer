@@ -98,7 +98,10 @@ export function ProgramPage({ programKey }: { programKey: string }) {
 
   return (
     <div className="app program-page">
-      <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
+      <nav className="crumbs">
+        <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
+        <Link className="back" href="/watchlist">★ Team watchlist</Link>
+      </nav>
 
       <header className="program-head">
         <div>

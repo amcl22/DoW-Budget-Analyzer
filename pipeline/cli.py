@@ -3,6 +3,7 @@
     budget ingest --fy 2027 --exhibit R-1|P-1 [--cycle PB2027] [--publish] [--refresh] [--force]
     budget ingest-all [--publish] [--no-books]
     budget discover-books --fy 2027
+    budget new-access-token | budget share-link --base-url https://host
     budget publish RUN_ID
     budget runs
     budget report RUN_ID
@@ -253,6 +254,29 @@ def discover_books_cmd(fy: int = typer.Option(..., help="Fiscal year of the budg
     for n in notes:
         typer.echo(f"  {n}")
     typer.echo(f"Wrote {path.relative_to(SOURCES_DIR.parent)}")
+
+
+@app.command("new-access-token")
+def new_access_token() -> None:
+    """Print a new random secret for the team link. Set it as ACCESS_TOKEN on the server;
+    replacing the old one revokes every earlier link."""
+    import secrets
+
+    typer.echo(secrets.token_urlsafe(32))
+
+
+@app.command("share-link")
+def share_link_cmd(base_url: str = typer.Option(..., help="Where the app is served, e.g. https://budget.example.com")) -> None:
+    """Print the team link for the ACCESS_TOKEN in this environment."""
+    import os
+
+    from api.access import share_link
+
+    token = os.environ.get("ACCESS_TOKEN")
+    if not token:
+        typer.echo("ACCESS_TOKEN is not set; create one with `budget new-access-token`.", err=True)
+        raise typer.Exit(1)
+    typer.echo(share_link(base_url, token))
 
 
 @app.command()

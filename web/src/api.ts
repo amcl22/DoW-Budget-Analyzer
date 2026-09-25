@@ -99,8 +99,17 @@ export function toParams(q: Query, forExport = false): URLSearchParams {
   return p;
 }
 
+/** The session has no valid team-link cookie (never visited with the link, or the link was replaced). */
+export class PrivateError extends Error {
+  constructor() {
+    super("This app is private. Open it with the team link.");
+    this.name = "PrivateError";
+  }
+}
+
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const resp = await fetch(url, { signal });
+  if (resp.status === 401) throw new PrivateError();
   if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
   return resp.json() as Promise<T>;
 }
@@ -180,6 +189,33 @@ export const fetchProgram = (key: string, signal?: AbortSignal) =>
 
 export async function setWatch(key: string, watched: boolean): Promise<boolean> {
   const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/watch`, { method: watched ? "PUT" : "DELETE" });
+  if (resp.status === 401) throw new PrivateError();
   if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
   return ((await resp.json()) as { watched: boolean }).watched;
 }
+
+export interface DashboardItem {
+  program_id: number;
+  program_key: string;
+  latest_title: string;
+  exhibit_family: "RDTE" | "PROC";
+  created_at: string;
+  budget_cycle: string | null;
+  service_branch: string | null;
+  current_year_amount: number | null;
+  budget_year_amount: number | null;
+  fiscal_year: number | null;
+  change_pct: number | null;
+  flagged: boolean;
+  series: { fiscal_year: number; amount_thousands: number; amount_type: AmountType }[];
+}
+
+export interface Dashboard {
+  watched: DashboardItem[];
+  flagged: number;
+  budget_year_total: number;
+  current_year_total: number;
+  flag_threshold: number;
+}
+
+export const fetchDashboard = (signal?: AbortSignal) => getJson<Dashboard>("/api/dashboard", signal);

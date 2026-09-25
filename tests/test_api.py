@@ -71,7 +71,9 @@ def client():
             yield conn
 
     app.dependency_overrides[get_conn] = conn_override
-    yield TestClient(app)
+    os.environ["ACCESS_TOKEN"] = "test-token"
+    yield TestClient(app, headers={"x-access-token": "test-token"})
+    os.environ.pop("ACCESS_TOKEN", None)
     app.dependency_overrides.clear()
     engine.dispose()
 
@@ -223,3 +225,18 @@ def test_watch_toggle_is_idempotent_and_listed(client):
     client.delete(f"/api/programs/{key}/watch")
     assert client.get("/api/watches").json() == []
     assert client.delete(f"/api/programs/{key}/watch").status_code == 200       # already gone: fine
+
+
+def test_dashboard_lists_watched_programs_flagged_first(client):
+    client.put("/api/programs/0601102A/watch")          # 259,178 -> 215,322: -16.9%
+    client.put("/api/programs/2031A:5757A05111/watch")  # 361,669 -> 1,552: flagged
+    d = client.get("/api/dashboard").json()
+    assert [w["program_key"] for w in d["watched"]] == ["2031A:5757A05111", "0601102A"]
+    first = d["watched"][0]
+    assert first["flagged"] and first["fiscal_year"] == 2027
+    assert [p["fiscal_year"] for p in first["series"]] == [2025, 2026, 2027]
+    assert d["flagged"] == 1
+    assert d["budget_year_total"] == 1552 + 215322
+    for key in ("0601102A", "2031A:5757A05111"):
+        client.delete(f"/api/programs/{key}/watch")
+    assert client.get("/api/dashboard").json()["watched"] == []

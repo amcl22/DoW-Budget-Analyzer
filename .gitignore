@@ -7,3 +7,4 @@ data/manual/
 web/node_modules/
 web/dist/
 web/*.tsbuildinfo
+.env

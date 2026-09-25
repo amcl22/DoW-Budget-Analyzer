@@ -1,6 +1,8 @@
 """HTTP API for search and browse, plus the built web app.
 
-    uvicorn api.main:app            # API at /api, web app at / (after `npm run build` in web/)
+    ACCESS_TOKEN=... uvicorn api.main:app   # API at /api, web app at / (after `npm run build` in web/)
+
+Access is by team link only (api/access.py): `budget share-link --base-url https://host`.
 """
 
 from __future__ import annotations
@@ -19,12 +21,14 @@ from sqlalchemy.engine import Connection, Engine
 
 from pipeline.config import database_url
 
-from .programs import get_program, program_detail, set_watch, watchlist
+from .access import LinkAccessMiddleware
+from .programs import dashboard, get_program, program_detail, set_watch, watchlist
 from .search import MAX_PAGE_SIZE, SORTS, SearchParams, export_rows, facets, search
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 
 app = FastAPI(title="DoW Budget Search", docs_url="/api/docs", openapi_url="/api/openapi.json")
+app.add_middleware(LinkAccessMiddleware)
 
 
 @lru_cache
@@ -117,6 +121,13 @@ def watches_endpoint(conn: Conn) -> list[dict]:
     return watchlist(conn)
 
 
+@app.get("/api/dashboard")
+def dashboard_endpoint(conn: Conn) -> dict:
+    """Team dashboard (spec 4.4): watched programs with their funding trend and year-over-year
+    change, largest moves first."""
+    return dashboard(conn)
+
+
 EXPORT_COLUMNS = [
     "budget_cycle", "exhibit_type", "service_branch", "appropriation_account", "appropriation_title",
     "organization", "budget_activity", "budget_activity_title", "line_number", "program_element",
@@ -145,7 +156,9 @@ if WEB_DIST.exists():
 
     @app.get("/{path:path}", include_in_schema=False)
     def web_app(path: str) -> FileResponse:
-        """The single-page app; client-side routes fall back to index.html."""
+        """The single-page app; client-side routes fall back to index.html (never API paths)."""
+        if path == "api" or path.startswith("api/"):
+            raise HTTPException(404, "no such API endpoint")
         candidate = (WEB_DIST / path).resolve()
         if path and candidate.is_file() and WEB_DIST in candidate.parents:
             return FileResponse(candidate)
