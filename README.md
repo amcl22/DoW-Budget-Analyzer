@@ -95,6 +95,13 @@ on). Put it behind HTTPS, since the host terminates TLS and the app marks the co
 from `X-Forwarded-Proto`. Then run `budget share-link` with the public URL. The image hasn't
 been built in the development environment, which had no Docker daemon.
 
+## Hosting on Cloudflare
+
+`deploy/cloudflare/` runs the app on Cloudflare Containers, with the data in a Neon Postgres.
+`deploy/cloudflare/README.md` has the step-by-step guide: create the database, load it
+(`deploy/load-database.sh`), set the secrets, deploy, share the link. There is also an
+optional GitHub Actions deploy on push (`.github/workflows/deploy-cloudflare.yml`).
+
 ## Team watchlist
 
 `/watchlist` (the ★ link at the top) is the team dashboard from spec 4.4. It shows the

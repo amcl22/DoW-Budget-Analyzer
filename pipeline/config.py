@@ -17,7 +17,13 @@ DEFAULT_DATABASE_URL = "postgresql+psycopg://budget:budget@localhost:5432/budget
 
 
 def database_url() -> str:
-    return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    """DATABASE_URL, with the plain postgres:// or postgresql:// URLs hosting providers hand out
+    (Neon, Render, Fly, ...) pointed at the psycopg 3 driver this project installs."""
+    url = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
 
 
 def raw_dir() -> Path:

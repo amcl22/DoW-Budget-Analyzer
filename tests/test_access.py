@@ -77,3 +77,14 @@ def test_refuses_to_run_open_without_a_secret(client, monkeypatch):
 
 def test_share_link():
     assert share_link("https://budget.example.com/", "a b") == "https://budget.example.com/?k=a+b"
+
+
+@pytest.mark.parametrize("given, expected", [
+    ("postgresql://u:p@ep-x.neon.tech/db?sslmode=require", "postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require"),
+    ("postgres://u@h/db", "postgresql+psycopg://u@h/db"),
+    ("postgresql+psycopg://u@/db?host=/tmp", "postgresql+psycopg://u@/db?host=/tmp"),
+])
+def test_hosted_database_urls_use_psycopg(monkeypatch, given, expected):
+    from pipeline.config import database_url
+    monkeypatch.setenv("DATABASE_URL", given)
+    assert database_url() == expected
