@@ -17,12 +17,13 @@ from .db.models import (
     BudgetLineItem,
     IngestionRun,
     LineItemAmount,
+    LineItemCostElement,
     LineItemSourceRef,
     Program,
     SourceDocument,
 )
 from .fetch import FetchedFile
-from .link_pages import MATCH_METHOD, LinkResult
+from .link_pages import LinkResult
 from .normalize import LineItemRecord
 
 
@@ -60,14 +61,14 @@ def input_fingerprint(fetched: list[FetchedFile], version: str) -> str:
 def seed_accounts(session: Session, accounts: dict[str, Account]) -> None:
     stmt = pg_insert(AppropriationAccount).values(
         [
-            {"code": a.code, "title": a.title, "service_branch": a.service_branch, "in_rdte_title": a.in_rdte_title}
+            {"code": a.code, "title": a.title, "service_branch": a.service_branch}
             for a in accounts.values()
         ]
     )
     session.execute(
         stmt.on_conflict_do_update(
             index_elements=["code"],
-            set_={c: stmt.excluded[c] for c in ("title", "service_branch", "in_rdte_title")},
+            set_={c: stmt.excluded[c] for c in ("title", "service_branch")},
         )
     )
 
@@ -75,7 +76,8 @@ def seed_accounts(session: Session, accounts: dict[str, Account]) -> None:
 def upsert_source_documents(
     session: Session, fetched: list[FetchedFile], fiscal_year: int, cycle: str, exhibit: str
 ) -> dict[str, SourceDocument]:
-    """Return {role: SourceDocument}, creating rows for files not seen before."""
+    """Return {role: SourceDocument} and {url: SourceDocument}, creating rows for files not seen
+    before. (Several justification books share one role, so look those up by URL.)"""
     out = {}
     for f in fetched:
         doc = session.scalar(
@@ -90,6 +92,7 @@ def upsert_source_documents(
             session.add(doc)
             session.flush()
         out[f.role] = doc
+        out[f.url] = doc
     return out
 
 
@@ -111,8 +114,8 @@ def find_reusable_run(session: Session, cycle: str, exhibit: str, fingerprint: s
 def _upsert_programs(session: Session, records: list[LineItemRecord]) -> dict[str, int]:
     rows = {}
     for r in records:  # last title wins within the release
-        rows[r.program_key] = {
-            "exhibit_family": "RDTE",
+        rows[(r.exhibit_family, r.program_key)] = {
+            "exhibit_family": r.exhibit_family,
             "program_key": r.program_key,
             "latest_title": f"Classified Programs – {r.service_branch} ({r.appropriation_account})"
             if r.is_classified
@@ -123,8 +126,8 @@ def _upsert_programs(session: Session, records: list[LineItemRecord]) -> dict[st
     stmt = stmt.on_conflict_do_update(
         index_elements=["exhibit_family", "program_key"],
         set_={"latest_title": stmt.excluded.latest_title},
-    ).returning(Program.program_key, Program.id)
-    return {key: pid for key, pid in session.execute(stmt)}
+    ).returning(Program.exhibit_family, Program.program_key, Program.id)
+    return {(fam, key): pid for fam, key, pid in session.execute(stmt)}
 
 
 def load_line_items(
@@ -135,14 +138,21 @@ def load_line_items(
     xlsx_doc: SourceDocument,
     pdf_doc: SourceDocument,
     fiscal_year: int,
+    ref_kind: str = "r1_summary",
+    match_method: str = "acct+ba+line+pe",
+    extra_refs: dict | None = None,
+    docs_by_url: dict[str, SourceDocument] | None = None,
+    extra_ref_kind: str = "r2_justification",
+    extra_match_method: str = "acct+ba+line+pe (R-2 header)",
 ) -> None:
+    """extra_refs: {record key: [PageRef with document_url]} from justification books."""
     program_ids = _upsert_programs(session, records)
     item_rows = [
         {
             "ingestion_run_id": run.id,
             "source_document_id": xlsx_doc.id,
             "source_row_number": r.source_row_number,
-            "program_id": program_ids[r.program_key],
+            "program_id": program_ids[(r.exhibit_family, r.program_key)],
             "fiscal_year": fiscal_year,
             "budget_cycle": run.budget_cycle,
             "exhibit_type": run.exhibit_type,
@@ -151,13 +161,15 @@ def load_line_items(
             "organization": r.organization,
             "budget_activity": r.budget_activity,
             "budget_activity_title": r.budget_activity_title,
+            "budget_subactivity": r.budget_subactivity,
+            "budget_subactivity_title": r.budget_subactivity_title,
             "line_number": r.line_number,
             "program_element": r.program_element,
-            "line_item_number": None,
+            "line_item_number": r.line_item_number,
             "program_title": r.program_title,
             "include_in_toa": r.include_in_toa,
             "classification": r.classification,
-            "raw_description_text": None,
+            "raw_description_text": r.raw_description_text,
         }
         for r in records
     ]
@@ -165,7 +177,7 @@ def load_line_items(
         insert(BudgetLineItem).returning(BudgetLineItem.id, sort_by_parameter_order=True), item_rows
     ).all()
 
-    amount_rows, ref_rows = [], []
+    amount_rows, element_rows, ref_rows = [], [], []
     for item_id, r in zip(ids, records, strict=True):
         amount_rows += [
             {
@@ -175,8 +187,26 @@ def load_line_items(
                 "funding_category": a.funding_category,
                 "amount_thousands": a.amount_thousands,
                 "source_column": a.source_column,
+                "quantity": a.quantity,
             }
             for a in r.amounts
+        ]
+        element_rows += [
+            {
+                "line_item_id": item_id,
+                "source_row_number": e.source_row_number,
+                "source_column": a.source_column,
+                "cost_type": e.cost_type,
+                "cost_type_title": e.cost_type_title,
+                "is_add": e.is_add,
+                "funds_fiscal_year": a.funds_fiscal_year,
+                "amount_type": a.amount_type,
+                "funding_category": a.funding_category,
+                "amount_thousands": a.amount_thousands,
+                "quantity": a.quantity,
+            }
+            for e in r.cost_elements
+            for a in e.amounts
         ]
         ref_rows += [
             {
@@ -184,16 +214,32 @@ def load_line_items(
                 "source_document_id": pdf_doc.id,
                 "page_number": ref.page_number,
                 "printed_page_label": ref.printed_label,
-                "ref_kind": "r1_summary",
+                "ref_kind": ref_kind,
                 "section": ref.section,
-                "match_method": MATCH_METHOD,
+                "match_method": match_method,
                 "amount_verified": ref.amount_verified,
                 "is_primary": ref.is_primary,
             }
             for ref in links.refs.get(r.key, [])
         ]
+        ref_rows += [
+            {
+                "line_item_id": item_id,
+                "source_document_id": docs_by_url[ref.document_url].id,
+                "page_number": ref.page_number,
+                "printed_page_label": ref.printed_label,
+                "ref_kind": extra_ref_kind,
+                "section": ref.section,
+                "match_method": extra_match_method,
+                "amount_verified": ref.amount_verified,
+                "is_primary": ref.is_primary,
+            }
+            for ref in (extra_refs or {}).get(r.key, [])
+        ]
     if amount_rows:
         session.execute(insert(LineItemAmount), amount_rows)
+    if element_rows:
+        session.execute(insert(LineItemCostElement), element_rows)
     if ref_rows:
         session.execute(insert(LineItemSourceRef), ref_rows)
 

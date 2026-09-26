@@ -111,6 +111,7 @@ def fake_sources(monkeypatch):
         SourceFile("data", "xlsx", XLSX_URL), SourceFile("summary_pdf", "pdf", PDF_URL),
     ]))
     monkeypatch.setattr(cli, "fetch_sources", lambda sources, exhibit, refresh=False: _fetched())
+    monkeypatch.setattr(cli, "load_books", lambda fy, exhibit: [])   # no justification-book downloads
     monkeypatch.setattr(cli, "parser_version", lambda: "test")
 
 
@@ -141,3 +142,50 @@ def test_cli_rerun_with_identical_inputs_is_a_no_op(engine, fake_sources, monkey
     forced = runner.invoke(cli.app, ["ingest", "--fy", "2027", "--exhibit", "r1", "--force"])
     assert forced.exit_code == 0, forced.output
     assert _runs(engine) == [(1, "published"), (2, "validated")]
+
+
+def test_p1_load_cost_elements_quantities_and_history(engine, accounts):
+    from pipeline.config import load_column_map
+    from pipeline.exhibits import EXHIBITS
+    from pipeline.parse_xlsx import parse_workbook
+    from tests.conftest import FIXTURES
+
+    ex = EXHIBITS["P-1"]
+    cols = load_column_map("P-1", "PB2027")
+    records = ex.normalize(parse_workbook(FIXTURES / "p1_2027_sample.xlsx", cols).rows, cols, accounts, "P-1")
+    links = ex.link(records, ex.parse_pdf(FIXTURES / "p1_2027_sample.pdf", cols), cols)
+    now = datetime(2026, 9, 25, tzinfo=timezone.utc)
+    fetched = [
+        FetchedFile("data", "xlsx", "https://example.test/p1_display.xlsx", "c" * 64, FIXTURES / "p1_2027_sample.xlsx", now, None),
+        FetchedFile("summary_pdf", "pdf", "https://example.test/FY2027_p1.pdf", "d" * 64, FIXTURES / "p1_2027_sample.pdf", now, 8),
+    ]
+    with Session(engine) as s:
+        seed_accounts(s, accounts)
+        docs = upsert_source_documents(s, fetched, 2027, "PB2027", "P-1")
+        run = IngestionRun(budget_cycle="PB2027", exhibit_type="P-1", status="running",
+                           parser_version="test", input_fingerprint="fp")
+        s.add(run)
+        s.flush()
+        load_line_items(s, run, records, links, docs["data"], docs["summary_pdf"], 2027,
+                        ref_kind=ex.ref_kind, match_method=ex.match_method)
+        run.status = "validated"
+        publish_run(s, run.id)
+        s.commit()
+
+        row = s.execute(text(
+            "SELECT line_item_number, budget_subactivity_title, prior_year_amount, prior_year_quantity,"
+            " current_year_quantity, source_page_number FROM line_item_flat"
+            " WHERE line_item_number = '5757A05111'"
+        )).one()
+        assert row == ("5757A05111", "Rotary", 557399, 31, 7, 5)
+        elements = s.execute(text(
+            "SELECT count(DISTINCT e.source_row_number) FROM line_item_cost_element e"
+            " JOIN budget_line_item li ON li.id = e.line_item_id WHERE li.line_item_number = '5757A05111'"
+        )).scalar()
+        assert elements == 2
+        history = s.execute(text(
+            "SELECT funds_fiscal_year, amount_type, amount_thousands, quantity, is_latest"
+            " FROM program_funding_history WHERE program_key = '2031A:5757A05111' ORDER BY funds_fiscal_year"
+        )).all()
+        assert history == [(2025, "actual", 557399, 31, True), (2026, "enacted", 361669, 7, True),
+                           (2027, "request", 1552, None, True)]

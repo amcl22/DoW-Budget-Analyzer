@@ -3,3 +3,8 @@ __pycache__/
 .venv/
 .pytest_cache/
 data/raw/
+data/manual/
+web/node_modules/
+web/dist/
+web/*.tsbuildinfo
+.env

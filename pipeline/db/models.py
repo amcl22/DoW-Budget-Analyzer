@@ -8,6 +8,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
     Index,
@@ -17,7 +18,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 RUN_STATUSES = ("running", "failed", "validated", "published", "superseded")
@@ -85,7 +86,6 @@ class AppropriationAccount(Base):
     code: Mapped[str] = mapped_column(Text, primary_key=True)
     title: Mapped[str] = mapped_column(Text)
     service_branch: Mapped[str] = mapped_column(Text)
-    in_rdte_title: Mapped[bool] = mapped_column(Boolean)
 
 
 class Program(Base):
@@ -118,6 +118,8 @@ class BudgetLineItem(Base):
         ),
         Index("ix_budget_line_item_program", "program_id"),
         Index("ix_budget_line_item_pe", "program_element"),
+        Index("ix_budget_line_item_bli", "line_item_number"),
+        Index("ix_budget_line_item_search", "search_tsv", postgresql_using="gin"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
@@ -133,6 +135,8 @@ class BudgetLineItem(Base):
     organization: Mapped[str | None] = mapped_column(Text)
     budget_activity: Mapped[str] = mapped_column(Text)
     budget_activity_title: Mapped[str] = mapped_column(Text)
+    budget_subactivity: Mapped[str | None] = mapped_column(Text)          # P-1 BSA
+    budget_subactivity_title: Mapped[str | None] = mapped_column(Text)
     line_number: Mapped[str] = mapped_column(Text)
     program_element: Mapped[str | None] = mapped_column(Text)
     line_item_number: Mapped[str | None] = mapped_column(Text)
@@ -140,13 +144,19 @@ class BudgetLineItem(Base):
     include_in_toa: Mapped[bool] = mapped_column(Boolean)
     classification: Mapped[str] = mapped_column(Text)
     raw_description_text: Mapped[str | None] = mapped_column(Text)
+    # generated column (migration 0003); never written by the pipeline
+    search_tsv: Mapped[str | None] = mapped_column(
+        TSVECTOR, Computed("<see migration 0003>", persisted=True), deferred=True
+    )
 
     amounts: Mapped[list[LineItemAmount]] = relationship(cascade="all, delete-orphan")
+    cost_elements: Mapped[list[LineItemCostElement]] = relationship(cascade="all, delete-orphan")
     source_refs: Mapped[list[LineItemSourceRef]] = relationship(cascade="all, delete-orphan")
 
 
 class LineItemAmount(Base):
-    """$ thousands as integers. A blank cell produces no row; an explicit 0 is stored."""
+    """$ thousands as integers. A blank cell produces no row; an explicit 0 is stored.
+    For P-1 lines these are net amounts: the sum of the line's 'Add' cost elements."""
 
     __tablename__ = "line_item_amount"
 
@@ -158,6 +168,28 @@ class LineItemAmount(Base):
     funding_category: Mapped[str] = mapped_column(Text, primary_key=True)
     amount_thousands: Mapped[int] = mapped_column(BigInteger)
     source_column: Mapped[str] = mapped_column(Text)
+    quantity: Mapped[int | None] = mapped_column(BigInteger)   # P-1 only
+
+
+class LineItemCostElement(Base):
+    """One P-1 Excel row (a cost type within a line) for one amount column: 'Weapon System Cost',
+    'Less: Advance Procurement (PY)', memo 'Non-Add' rows such as 'C (FY 2026 for FY 2027) (M)'."""
+
+    __tablename__ = "line_item_cost_element"
+
+    line_item_id: Mapped[int] = mapped_column(
+        ForeignKey("budget_line_item.id", ondelete="CASCADE"), primary_key=True
+    )
+    source_row_number: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_column: Mapped[str] = mapped_column(Text, primary_key=True)
+    cost_type: Mapped[str] = mapped_column(Text)
+    cost_type_title: Mapped[str] = mapped_column(Text)
+    is_add: Mapped[bool] = mapped_column(Boolean)
+    funds_fiscal_year: Mapped[int] = mapped_column(Integer)
+    amount_type: Mapped[str] = mapped_column(Text)
+    funding_category: Mapped[str] = mapped_column(Text)
+    amount_thousands: Mapped[int] = mapped_column(BigInteger)
+    quantity: Mapped[int | None] = mapped_column(BigInteger)
 
 
 class LineItemSourceRef(Base):
@@ -182,3 +214,18 @@ class LineItemSourceRef(Base):
     amount_verified: Mapped[bool] = mapped_column(Boolean)
     # the preferred link when a line appears in several sections (agency detail over combined)
     is_primary: Mapped[bool] = mapped_column(Boolean)
+
+
+class ProgramWatch(Base):
+    """A program pinned to the dashboard. user_id NULL = the shared team watchlist."""
+
+    __tablename__ = "program_watch"
+    __table_args__ = (
+        Index("uq_program_watch", "program_id", text("coalesce(user_id, '')"), unique=True),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"))
+    user_id: Mapped[str | None] = mapped_column(Text)
+    note: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

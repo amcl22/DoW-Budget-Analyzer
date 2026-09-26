@@ -1,0 +1,15 @@
+# Transcribed from FY2027_p1.pdf, Component Summary (physical page 8-9).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header.
+source: "FY2027_p1.pdf physical page 8-9"
+groups:
+  - label: "Grand Total Department of War"
+    include_in_toa: true
+    amounts:
+      "FY 2025 Total Amount":                 186510870
+      "FY 2026 Discretionary Enacted Amount": 168279764
+      "FY 2026 PL 119-21 Spend Plan Amount":  55552276
+      "FY 2026 Total Amount":                 223832040
+      "FY 2027 Discretionary Request Amount": 257591400
+      "FY 2027 Mandatory Amount":             155504385
+      "FY 2027 Total Amount":                 413095785

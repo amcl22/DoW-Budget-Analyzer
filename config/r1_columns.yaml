@@ -1,10 +1,14 @@
 # Column map for r1_display.xlsx, keyed by budget cycle.
+# amounts: every Excel amount column -> (funds fiscal year, amount type, funding category).
+#   type:     actual | enacted | cr (full-year continuing resolution level) | request
+#   category: total | discretionary | mandatory | reconciliation | supplemental | spend_plan
+#   A year with a single column is category 'total'. Components must add up to the total.
 # Headers are matched case- and whitespace-insensitively. Any header in the sheet that is not
 # mapped here fails the run, so a new column is never dropped silently.
 PB2027:
   sheet: "Exhibit R-1"
   header_row_contains: ["Account", "PE/BLI", "Line Number"]
-  fields:
+  fields: &r1_fields
     appropriation_account: "Account"
     appropriation_title:   "Account Title"
     organization:          "Organization"
@@ -36,3 +40,56 @@ PB2027:
     "FY 2027 Discretionary Request": "FY 2027 Discretionary Request"
     "FY 2027 Mandatory Request":     "FY 2027 Mandatory Request"
     "FY 2027 Total":                 "FY 2027 Total"
+
+PB2026:
+  sheet: "Exhibit R-1"
+  header_row_contains: ["Account", "PE/BLI", "Line Number"]
+  fields: *r1_fields
+  amounts:
+    - {header: "FY 2024 Actuals",                fy: 2024, type: actual,  category: total}
+    - {header: "FY 2025 Enacted",                fy: 2025, type: enacted, category: discretionary}
+    - {header: "FY 2025 Supplemental",           fy: 2025, type: enacted, category: supplemental}
+    - {header: "FY 2025 Total",                  fy: 2025, type: enacted, category: total}
+    - {header: "FY 2026 Disc Request",           fy: 2026, type: request, category: discretionary}
+    - {header: "FY 2026 Reconciliation Request", fy: 2026, type: request, category: reconciliation}
+    - {header: "FY 2026 Total",                  fy: 2026, type: request, category: total}
+  pdf_columns:
+    "FY 2024 Actuals":                "FY 2024 Actuals"
+    "FY 2025 Enacted":                "FY 2025 Enacted"
+    "FY 2025 Supplemental":           "FY 2025 Supplemental"
+    "FY 2025 Total":                  "FY 2025 Total"
+    "FY 2026 Disc Request":           "FY 2026 Disc Request"
+    "FY 2026 Reconciliation Request": "FY 2026 Reconciliation Request"
+    "FY 2026 Total":                  "FY 2026 Total"
+
+PB2025:
+  sheet: "Exhibit R-1"
+  header_row_contains: ["Account", "PE/BLI", "Line Number"]
+  fields: *r1_fields
+  amounts:
+    # FY 2024 had no full-year appropriation when PB2025 was prepared; the column is the
+    # annualized continuing-resolution level (see the workbook footnote).
+    - {header: "FY 2023 Actuals",                     fy: 2023, type: actual,  category: total}
+    - {header: "FY 2024 PB Request with CR Amounts*", fy: 2024, type: cr,      category: total}
+    - {header: "FY 2025 Request",                     fy: 2025, type: request, category: total}
+  pdf_columns:
+    "FY 2023 Actuals":                         "FY 2023 Actuals"
+    "FY 2024 PB Request with CR Adjustments":  "FY 2024 PB Request with CR Amounts*"
+    "FY 2025 Request":                         "FY 2025 Request"
+
+PB2024:
+  sheet: "Exhibit R-1"
+  header_row_contains: ["Account", "PE/BLI", "Line Number"]
+  fields: *r1_fields
+  amounts:
+    - {header: "FY 2022 Actuals",                     fy: 2022, type: actual,  category: total}
+    - {header: "FY 2023 Less Supplementals Enacted",  fy: 2023, type: enacted, category: discretionary}
+    - {header: "FY 2023 Supplementals Enacted*",      fy: 2023, type: enacted, category: supplemental}
+    - {header: "FY 2023 Total Enacted",               fy: 2023, type: enacted, category: total}
+    - {header: "FY 2024 Request",                     fy: 2024, type: request, category: total}
+  pdf_columns:
+    "FY 2022 Actuals":                    "FY 2022 Actuals"
+    "FY 2023 Less Supplementals Enacted": "FY 2023 Less Supplementals Enacted"
+    "FY 2023 Supplementals Enacted":      "FY 2023 Supplementals Enacted*"
+    "FY 2023 Total Enacted":              "FY 2023 Total Enacted"
+    "FY 2024 Request":                    "FY 2024 Request"

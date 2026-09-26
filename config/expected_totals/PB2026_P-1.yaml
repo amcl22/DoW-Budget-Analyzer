@@ -1,0 +1,13 @@
+# Transcribed from FY2026_p1.pdf, Component Summary (physical page 7).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header.
+source: "FY2026_p1.pdf physical page 7"
+groups:
+  - label: "Grand Total Department of Defense"
+    include_in_toa: true
+    amounts:
+      "FY 2024 Actuals Amount":                204597288
+      "FY 2025 Enacted Amount":                174356359
+      "FY 2026 Disc Request Amount":           153280380
+      "FY 2026 Reconciliation Request Amount": 51943857
+      "FY 2026 Total Amount":                  205224237

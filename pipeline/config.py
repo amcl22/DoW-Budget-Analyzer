@@ -17,7 +17,13 @@ DEFAULT_DATABASE_URL = "postgresql+psycopg://budget:budget@localhost:5432/budget
 
 
 def database_url() -> str:
-    return os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    """DATABASE_URL, with the plain postgres:// or postgresql:// URLs hosting providers hand out
+    (Neon, Render, Fly, ...) pointed at the psycopg 3 driver this project installs."""
+    url = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix):
+            return "postgresql+psycopg://" + url[len(prefix):]
+    return url
 
 
 def raw_dir() -> Path:
@@ -48,6 +54,7 @@ class AmountColumn:
     funds_fiscal_year: int
     amount_type: str
     funding_category: str
+    quantity_header: str | None = None   # P-1: the paired 'Quantity' column
 
 
 @dataclass(frozen=True)
@@ -56,7 +63,11 @@ class ExhibitColumns:
     header_row_contains: list[str]
     fields: dict[str, str]          # canonical field -> Excel header
     amounts: list[AmountColumn]
-    pdf_columns: dict[str, str]     # PDF column label -> Excel header
+    pdf_columns: dict[str, str]     # PDF column label -> Excel header, in PDF column order
+    defaults: dict[str, str]        # canonical field -> value, for fields the sheet lacks
+
+    def quantity_header(self, amount_header: str) -> str | None:
+        return next((a.quantity_header for a in self.amounts if a.header == amount_header), None)
 
 
 def load_column_map(exhibit: str, cycle: str) -> ExhibitColumns:
@@ -71,25 +82,37 @@ def load_column_map(exhibit: str, cycle: str) -> ExhibitColumns:
         header_row_contains=list(c["header_row_contains"]),
         fields=dict(c["fields"]),
         amounts=[
-            AmountColumn(a["header"], int(a["fy"]), a["type"], a["category"])
+            AmountColumn(a["header"], int(a["fy"]), a["type"], a["category"], a.get("quantity"))
             for a in c["amounts"]
         ],
         pdf_columns=dict(c.get("pdf_columns", {})),
+        defaults=dict(c.get("defaults", {})),
     )
 
 
 @dataclass(frozen=True)
 class Account:
     code: str
-    title: str
+    title: str                              # current title
     service_branch: str
-    in_rdte_title: bool
+    outside_title: tuple[str, ...] = ()     # exhibits listing it outside their title (R-1: 'Not in RDT&E')
+    former_titles: tuple[str, ...] = ()
+
+    @property
+    def titles(self) -> tuple[str, ...]:
+        return (self.title, *self.former_titles)
+
+    def in_title(self, exhibit: str) -> bool:
+        return normalize_exhibit(exhibit) not in self.outside_title
 
 
 def load_accounts() -> dict[str, Account]:
     data = _load_yaml(CONFIG_DIR / "appropriation_accounts.yaml")
     return {
-        code: Account(code, a["title"], a["service_branch"], bool(a["in_rdte_title"]))
+        code: Account(
+            code, a["title"], a["service_branch"],
+            tuple(a.get("outside_title", ())), tuple(a.get("former_titles", ())),
+        )
         for code, a in data["accounts"].items()
     }
 

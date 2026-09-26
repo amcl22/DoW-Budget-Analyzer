@@ -1,0 +1,27 @@
+# Loads the budget data into the hosted database (the DATABASE_URL repository secret) from the
+# snapshot in deploy/data/dow-budget.dump. Run it from the Actions tab: "Load database" >
+# "Run workflow". Safe to re-run: it replaces what an earlier load left.
+name: Load database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  load:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the secret is set
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          [ -n "$DATABASE_URL" ] || { echo "::error::Add the DATABASE_URL repository secret first"; exit 1; }
+      - name: Install the Postgres client
+        run: sudo apt-get update -q && sudo apt-get install -yq postgresql-client
+      - name: Restore the snapshot
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
+          pg_restore --no-owner --no-acl --clean --if-exists -d "$url" deploy/data/dow-budget.dump
+          psql "$url" -c "SELECT budget_cycle, exhibit_type, count(*) AS lines FROM line_item_flat GROUP BY 1, 2 ORDER BY 1, 2"

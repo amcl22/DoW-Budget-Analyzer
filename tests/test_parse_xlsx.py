@@ -1,7 +1,7 @@
 import openpyxl
 import pytest
 
-from pipeline.parse_r1 import ParseError, parse_r1_workbook
+from pipeline.parse_xlsx import ParseError, parse_workbook
 from tests.conftest import SAMPLE_XLSX
 
 
@@ -26,7 +26,7 @@ def _modified_copy(tmp_path, edit):
 def test_unmapped_header_fails_the_run(tmp_path, cols):
     path = _modified_copy(tmp_path, lambda ws: ws.cell(row=2, column=ws.max_column + 1, value="FY 2028 Estimate"))
     with pytest.raises(ParseError, match="FY 2028 Estimate"):
-        parse_r1_workbook(path, cols)
+        parse_workbook(path, cols)
 
 
 def test_missing_header_fails_the_run(tmp_path, cols):
@@ -36,11 +36,11 @@ def test_missing_header_fails_the_run(tmp_path, cols):
                 cell.value = "FY 2027 Grand Total"
     path = _modified_copy(tmp_path, rename)
     with pytest.raises(ParseError, match="fy 2027 total"):
-        parse_r1_workbook(path, cols)
+        parse_workbook(path, cols)
 
 
 def test_header_row_is_found_by_content_not_position(tmp_path, cols):
     path = _modified_copy(tmp_path, lambda ws: ws.insert_rows(1, amount=2))
-    rows = parse_r1_workbook(path, cols)
+    rows = parse_workbook(path, cols).rows
     assert len(rows) == 50
     assert rows[0].row_number == 5

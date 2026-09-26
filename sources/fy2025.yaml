@@ -1,0 +1,38 @@
+# Verified source URLs for the FY2025 President's Budget (see 02-data-sources.md).
+# List files explicitly; never construct URLs by pattern.
+fiscal_year: 2025
+budget_cycle: PB2025
+exhibits:
+  R-1:
+    - role: data
+      format: xlsx
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2025/r1_display.xlsx
+    - role: summary_pdf
+      format: pdf
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2025/FY2025_r1.pdf
+  P-1:
+    - role: data
+      format: xlsx
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2025/p1_display.xlsx
+    - role: summary_pdf
+      format: pdf
+      url: https://comptroller.war.gov/Portals/45/Documents/defbudget/FY2025/FY2025_p1.pdf
+
+# Index pages listing each service's detailed justification books. `budget discover-books`
+# reads them and writes the book list to sources/fy2025_books.yaml (never guess filenames).
+# manual: the site refuses automated downloads (Akamai blocks cloud IPs); download the books in
+# a browser into data/manual/FY2025/<exhibit>/ and list their URLs in fy2025_books.yaml.
+justification_indexes:
+  R-2:
+    - service: Defense-Wide
+      index: https://comptroller.war.gov/Budget-Materials/FY2025BudgetJustification/
+      link_contains: ["03_RDT_and_E/", "RDTE_Budget_Item_Justification"]   # + the DHP RDT&E book
+    - service: Navy
+      index: https://www.secnav.navy.mil/fmc/Pages/Fiscal-Year-2025.aspx
+      link_contains: "RDTEN_"
+    - service: Army
+      index: https://www.asafm.army.mil/Budget-Materials/
+      manual: true
+    - service: Air Force / Space Force
+      index: https://www.saffm.hq.af.mil/FM-Resources/Budget/
+      manual: true

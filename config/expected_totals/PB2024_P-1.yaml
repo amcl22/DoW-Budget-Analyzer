@@ -1,0 +1,13 @@
+# Transcribed from FY2024_p1.pdf, Component Summary (physical page 7).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header.
+source: "FY2024_p1.pdf physical page 7"
+groups:
+  - label: "Grand Total Department of Defense"
+    include_in_toa: true
+    amounts:
+      "FY 2022 Actuals Amount":                    155512706
+      "FY 2023 Total Enacted Amount":              167586385
+      "FY 2023 Supplementals Enacted Amount*":     3224192
+      "FY 2023 Less Supplementals Enacted Amount": 164362193
+      "FY 2024 Request Amount":                    170048790

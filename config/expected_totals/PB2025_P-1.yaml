@@ -1,0 +1,11 @@
+# Transcribed from FY2025_p1.pdf, Component Summary (physical page 7).
+# Independent anchor: guards against the Excel parser and the PDF parser being wrong the same way.
+# $ thousands, keyed by Excel header.
+source: "FY2025_p1.pdf physical page 7"
+groups:
+  - label: "Grand Total Department of Defense"
+    include_in_toa: true
+    amounts:
+      "FY 2023 Actuals Amount":                         182236180
+      "FY 2024 PB Request with CR Adjustments Amount*": 163862452
+      "FY 2025 Request Amount":                         167546268
