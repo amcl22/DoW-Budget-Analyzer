@@ -83,8 +83,19 @@ def test_share_link():
     ("postgresql://u:p@ep-x.neon.tech/db?sslmode=require", "postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require"),
     ("postgres://u@h/db", "postgresql+psycopg://u@h/db"),
     ("postgresql+psycopg://u@/db?host=/tmp", "postgresql+psycopg://u@/db?host=/tmp"),
+    ("psql 'postgresql://u:p@ep-x.neon.tech/db?sslmode=require&channel_binding=require'",
+     "postgresql+psycopg://u:p@ep-x.neon.tech/db?sslmode=require&channel_binding=require"),
+    ('  "postgresql://u@h/db"\n', "postgresql+psycopg://u@h/db"),
 ])
 def test_hosted_database_urls_use_psycopg(monkeypatch, given, expected):
     from pipeline.config import database_url
     monkeypatch.setenv("DATABASE_URL", given)
     assert database_url() == expected
+
+
+def test_bad_database_url_explains_without_leaking(monkeypatch):
+    from pipeline.config import database_url
+    monkeypatch.setenv("DATABASE_URL", "neondb_owner:secretpw@ep-x.neon.tech/neondb")
+    with pytest.raises(ValueError) as e:
+        database_url()
+    assert "postgresql://" in str(e.value) and "secretpw" not in str(e.value)
