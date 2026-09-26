@@ -17,12 +17,24 @@ DEFAULT_DATABASE_URL = "postgresql+psycopg://budget:budget@localhost:5432/budget
 
 
 def database_url() -> str:
-    """DATABASE_URL, with the plain postgres:// or postgresql:// URLs hosting providers hand out
-    (Neon, Render, Fly, ...) pointed at the psycopg 3 driver this project installs."""
-    url = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
+    """DATABASE_URL, cleaned up for the way hosting dashboards get filled in: surrounding
+    whitespace, quotes, or Neon's `psql '...'` wrapper copied along with the string are
+    dropped, and plain postgres:// or postgresql:// URLs (Neon, Render, Fly, ...) are pointed
+    at the psycopg 3 driver this project installs."""
+    url = os.environ.get("DATABASE_URL", "").strip() or DEFAULT_DATABASE_URL
+    if url.startswith("psql "):
+        url = url[len("psql "):].strip()
+    url = url.strip("'\"").strip()
     for prefix in ("postgres://", "postgresql://"):
         if url.startswith(prefix):
-            return "postgresql+psycopg://" + url[len(prefix):]
+            url = "postgresql+psycopg://" + url[len(prefix):]
+            break
+    if not url.startswith("postgresql+"):
+        # never echo the value: it holds the database password
+        raise ValueError(
+            "DATABASE_URL isn't a Postgres connection string: it should start with postgresql:// "
+            f"(it starts with {url[:12]!r}...). Paste only the connection string from Neon."
+        )
     return url
 
 
