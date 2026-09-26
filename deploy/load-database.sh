@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Fill a hosted Postgres (e.g. Neon) with the budget data. Run it from your own machine.
 #
-#   deploy/load-database.sh restore dow-budget.dump   # load a pg_dump snapshot (fast)
+#   deploy/load-database.sh restore deploy/data/dow-budget.dump   # load the snapshot (fast)
 #   deploy/load-database.sh ingest                    # download and parse every release (slow;
 #                                                     # needs Docker and ~1 GB of disk)
 #

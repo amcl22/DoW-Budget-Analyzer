@@ -15,88 +15,81 @@ changes on Cloudflare's side. The container sleeps after 30 minutes without visi
 next visit wakes it in a few seconds.
 
 **You need:** a Cloudflare account on the Workers Paid plan ($5/month; Containers aren't on
-the free plan), a free Neon account, Node 20+, and Docker running on the machine you deploy
-from (wrangler builds the image locally). No Docker? Use the GitHub Actions deploy in step 5.
+the free plan) and a free Neon account. The browser-only path below uses GitHub Actions for
+the loading and deploying, so nothing has to be installed on your computer.
 
-## 1. Create the database (Neon)
+## Browser-only setup (GitHub Actions)
 
-1. At [neon.tech](https://neon.tech), create a project (pick the region nearest your team).
-2. On the dashboard, open **Connect**, turn **Connection pooling off**, and copy the
-   connection string. It looks like
-   `postgresql://neondb_owner:PASSWORD@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require`.
-   Use this direct (unpooled) string for both loading and the app.
+1. **Merge this work into `main`**: open
+   <https://github.com/amcl22/DoW-Budget-Analyzer/compare/main...claude/kind-lovelace-txvqsy>,
+   click **Create pull request**, then **Merge pull request**. (The first deploy run after
+   the merge fails until step 5 is done; that's expected.)
+2. **Neon**: sign up at <https://console.neon.tech/signup> and create a project (Postgres 17,
+   region nearest your team). On the project dashboard click **Connect**, switch
+   **Connection pooling** off, and copy the connection string
+   (`postgresql://neondb_owner:...@ep-....neon.tech/neondb?sslmode=require...`).
+3. **Cloudflare**: sign up at <https://dash.cloudflare.com/sign-up>. Open **Workers & Pages**
+   once (<https://dash.cloudflare.com/?to=/:account/workers-and-pages>) so it gives you a
+   `*.workers.dev` subdomain, and copy the **Account ID** shown there. Upgrade to Workers Paid
+   at <https://dash.cloudflare.com/?to=/:account/workers/plans>.
+4. **Cloudflare API token**: at <https://dash.cloudflare.com/profile/api-tokens> click
+   **Create Token**, use the **Edit Cloudflare Workers** template, and, if the permission list
+   offers **Account → Containers**, add it with **Edit**. Create it and copy the token.
+5. **Repository secrets**: at
+   <https://github.com/amcl22/DoW-Budget-Analyzer/settings/secrets/actions/new> add each of
+   these (name exactly as written, value pasted):
 
-## 2. Load the data
+   | Name | Value |
+   |---|---|
+   | `CLOUDFLARE_API_TOKEN` | the token from step 4 |
+   | `CLOUDFLARE_ACCOUNT_ID` | the Account ID from step 3 |
+   | `DATABASE_URL` | the Neon connection string from step 2 |
+   | `ACCESS_TOKEN` | a long random string: the team-link secret (see below) |
+   | `ANTHROPIC_API_KEY` | optional, from <https://console.anthropic.com/settings/keys>; turns on /ask |
 
-Fastest is to restore the snapshot (`dow-budget.dump`: all eight releases, PB2024–PB2027 R-1
-and P-1 with the R-2 details). From the repo root, with `pg_restore` installed (`brew install
-libpq` or `apt install postgresql-client`):
+   For `ACCESS_TOKEN`, any 32+ random letters and digits work. On a Mac or Linux, run
+   `openssl rand -hex 24` in Terminal; or `budget new-access-token` if the app is installed.
+6. **Load the data**: <https://github.com/amcl22/DoW-Budget-Analyzer/actions/workflows/load-database.yml>
+   → **Run workflow** → **Run workflow**. About a minute; the log ends with a line count per
+   release.
+7. **Deploy**: <https://github.com/amcl22/DoW-Budget-Analyzer/actions/workflows/deploy-cloudflare.yml>
+   → **Run workflow**. About five minutes; the first run also provisions the container, so
+   give it a few more minutes before the first visit.
+8. **Share**: the address is on the Worker's page in Cloudflare (Workers & Pages →
+   `dow-budget-search`), e.g. `https://dow-budget-search.<subdomain>.workers.dev`. The team
+   link is that address plus `/?k=` plus your `ACCESS_TOKEN`:
+   `https://dow-budget-search.<subdomain>.workers.dev/?k=<ACCESS_TOKEN>`.
+
+After this, every push to `main` redeploys. Changing a secret: update it in GitHub, then
+run the deploy workflow again. New `ACCESS_TOKEN` = every old link stops working.
+
+## From your own computer instead
+
+Needs Node 20+, Docker running, and `pg_restore` (`brew install libpq` or
+`apt install postgresql-client`). From the repo root:
 
 ```sh
 export DATABASE_URL='postgresql://neondb_owner:PASSWORD@ep-xxx.../neondb?sslmode=require'
-deploy/load-database.sh restore dow-budget.dump
-```
+deploy/load-database.sh restore deploy/data/dow-budget.dump   # or: deploy/load-database.sh ingest
 
-Or build it from the sources yourself (slower, needs Docker; see the main README about the
-Army and Air Force books, which have to be downloaded by hand):
-
-```sh
-deploy/load-database.sh ingest
-```
-
-Re-run either one when a new budget release comes out. The app picks up the new data without
-a redeploy.
-
-## 3. Deploy
-
-```sh
 cd deploy/cloudflare
 npm install
 npx wrangler login
-
-# secrets, stored encrypted by Cloudflare (each command prompts for the value)
-npx wrangler secret put DATABASE_URL        # the Neon string from step 1
-npx wrangler secret put ACCESS_TOKEN        # make one: pip install -e ../.. && budget new-access-token
-npx wrangler secret put ANTHROPIC_API_KEY   # optional: turns on /ask (console.anthropic.com)
-
+npx wrangler deploy                          # creates the Worker (prints its address)
+npx wrangler secret put DATABASE_URL         # each prompts for the value
+npx wrangler secret put ACCESS_TOKEN
+npx wrangler secret put ANTHROPIC_API_KEY    # optional
 npx wrangler deploy
+ACCESS_TOKEN=<same secret> budget share-link --base-url https://dow-budget-search.<subdomain>.workers.dev
 ```
 
-The first deploy builds and uploads the image, then prints the address:
-`https://dow-budget-search.<your-subdomain>.workers.dev`. Allow a few minutes for the
-container to be provisioned before the first visit works. `npx wrangler tail` streams the
-logs.
-
-> If `wrangler secret put` says the Worker doesn't exist yet, run `npx wrangler deploy` once
-> first, then set the secrets, then deploy again.
-
-## 4. Share it
-
-```sh
-ACCESS_TOKEN=<the same secret> budget share-link --base-url https://dow-budget-search.<your-subdomain>.workers.dev
-```
-
-Send that link to the team. Anyone without it gets the "This app is private" page, and search
-engines are told not to index it. To cut everyone off and issue a new link, set a new
-`ACCESS_TOKEN` (`npx wrangler secret put ACCESS_TOKEN`) and redeploy.
+`npx wrangler tail` streams the logs. `deploy/load-database.sh ingest` rebuilds the data from
+the sources instead of the snapshot (slow; see the main README about the Army and Air Force
+books); re-run it, or re-run the load workflow with a fresh snapshot, when a new release is out.
 
 **Your own domain (optional):** with the domain on Cloudflare, uncomment the `routes` line
-in `wrangler.jsonc`, set your hostname, set `"workers_dev": false`, and deploy. The
-`*.workers.dev` address then stops working, and share links use your domain.
-
-## 5. Deploy automatically from GitHub (optional)
-
-`.github/workflows/deploy-cloudflare.yml` redeploys on every push to `main`, and can be run
-by hand from the repository's **Actions** tab. It builds the image on GitHub, so you don't need
-Docker locally. In the repository's **Settings → Secrets and variables → Actions**, add:
-
-- `CLOUDFLARE_API_TOKEN`: from Cloudflare **My Profile → API Tokens**, create one from the
-  **Edit Cloudflare Workers** template. If the deploy fails with a permissions error for
-  containers or the image registry, edit the token and add the account's Containers
-  permission (Edit).
-- `CLOUDFLARE_ACCOUNT_ID`: shown in the Cloudflare dashboard's sidebar (Workers & Pages).
-
-The app's own secrets (step 3) stay in Cloudflare; the workflow never sees them.
+in `wrangler.jsonc`, set your hostname, set `"workers_dev": false`, and deploy. Share links
+then use your domain.
 
 ## Settings
 
@@ -118,3 +111,8 @@ The app's own secrets (step 3) stay in Cloudflare; the workflow never sees them.
   that the Neon project isn't paused (the free tier suspends idle compute, and it resumes on
   the next connection).
 - **/ask says Q&A isn't switched on**: set `ANTHROPIC_API_KEY` and redeploy.
+- **Deploy fails with an authentication or permissions error**: the API token is missing a
+  permission; edit it at <https://dash.cloudflare.com/profile/api-tokens> (Workers Scripts
+  Edit, and Containers Edit if listed) and re-run the workflow.
+- **Deploy says there's no workers.dev subdomain**: open Workers & Pages in the dashboard once
+  and accept the subdomain it offers.
