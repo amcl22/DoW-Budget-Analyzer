@@ -102,6 +102,39 @@ programs anyone has watched, with current and budget-year amounts, year-over-yea
 (±20% flagged, largest moves first) and a trend sparkline. With link-only access, there is one
 shared watchlist. `GET /api/dashboard` returns the same data.
 
+## Ask a question (Q&A)
+
+`/ask` answers plain-English questions from the database, using Claude (`api/qa.py`). Claude
+doesn't see the database directly. It calls four read-only lookups (search, totals with an
+optional breakdown, one line item, one program's history), and every row it gets back carries a
+citation ref. The server then checks the answer before returning it:
+
+- **Every dollar figure cites a source.** Citations become `[1]`, `[2]` markers, each with a
+  card: the line item (with its program page and source PDF page), the program history, or the
+  total (with a link to its lines and the PDF pages of the largest ones).
+- **Invented citations are dropped.** A ref that no lookup returned for this question is
+  removed and reported in `warnings`.
+- **Figures are checked.** Each dollar amount in the answer must match a cited amount, or a sum
+  or difference of two, to the precision written ("$1.8 billion" accepts $1.75–1.85B).
+  Anything else is listed in `unverified_figures` and marked ⚠ on the page.
+- **No match means saying so.** If nothing in the data answers the question, the status is
+  `no_match` and the answer says what was searched. Partial answers are marked `partial`.
+
+To turn it on, set `ANTHROPIC_API_KEY`. Without it, `/ask` explains that Q&A is off, and the
+rest of the app is unaffected. Optional settings:
+
+| Variable | Default | |
+|---|---|---|
+| `QA_MODEL` | `claude-opus-5` | model id |
+| `QA_EFFORT` | the API default | `low` / `medium` are cheaper and faster; try them |
+| `QA_MAX_PER_HOUR` | `120` | team-wide cap, since anyone with the link can ask |
+
+Requests opt in to **server-side refusal fallbacks** (`fallbacks: "default"`). If the model's
+safety checks decline a question, the API re-runs it on Anthropic's recommended fallback model
+instead of returning a refusal. Remove `fallbacks` and `betas` in `ask()` to opt out.
+`POST /api/ask {"question": ..., "history": [{"question", "answer"}]}` is the API. A typical
+question makes 2–4 lookups.
+
 ## What `ingest` does
 
 1. **Fetch.** Downloads the files listed in `sources/fy{FY}.yaml` (master Excel and summary

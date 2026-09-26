@@ -13,7 +13,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
@@ -21,6 +21,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from pipeline.config import database_url
 
+from . import qa
 from .access import LinkAccessMiddleware
 from .programs import dashboard, get_program, program_detail, set_watch, watchlist
 from .search import MAX_PAGE_SIZE, SORTS, SearchParams, export_rows, facets, search
@@ -126,6 +127,29 @@ def dashboard_endpoint(conn: Conn) -> dict:
     """Team dashboard (spec 4.4): watched programs with their funding trend and year-over-year
     change, largest moves first."""
     return dashboard(conn)
+
+
+@app.get("/api/ask")
+def ask_status() -> dict:
+    """Whether Q&A is switched on (it needs ANTHROPIC_API_KEY)."""
+    return {"enabled": qa.configured(), "max_question_chars": qa.MAX_QUESTION_CHARS}
+
+
+@app.post("/api/ask")
+def ask_endpoint(conn: Conn, question: Annotated[str, Body(max_length=qa.MAX_QUESTION_CHARS)],
+                 history: Annotated[list[dict], Body(max_length=20)] = []) -> dict:  # noqa: B006
+    """Ask a question in plain English. The answer cites a line item, program or total for every
+    dollar figure ([1], [2], ... matching `citations`, each with its source PDF page), lists any
+    figure it couldn't match to its sources, and says so when nothing in the data answers it.
+    history: earlier turns as [{question, answer}] for follow-ups."""
+    if not qa.configured():
+        raise HTTPException(503, "Q&A isn't set up on this server: set ANTHROPIC_API_KEY.")
+    if not qa.limiter.allow():
+        raise HTTPException(429, "The team's hourly question limit is used up; try again later.")
+    try:
+        return qa.ask(conn, question, history)
+    except qa.QAError as e:
+        raise HTTPException(e.status, str(e)) from e
 
 
 EXPORT_COLUMNS = [

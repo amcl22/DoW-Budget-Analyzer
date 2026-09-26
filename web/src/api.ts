@@ -219,3 +219,57 @@ export interface Dashboard {
 }
 
 export const fetchDashboard = (signal?: AbortSignal) => getJson<Dashboard>("/api/dashboard", signal);
+
+export interface LineCard {
+  line_item_id: number;
+  budget_cycle: string;
+  exhibit_type: string;
+  service_branch: string;
+  appropriation_account: string;
+  number: string | null;
+  program_key: string | null;
+  title: string;
+  fiscal_year: number;
+  prior_year_amount: number | null;
+  current_year_amount: number | null;
+  budget_year_amount: number | null;
+  source_pdf_link: string | null;
+  source_page_number: number | null;
+}
+
+export type Citation = { n: number; ref: string } & (
+  | ({ kind: "line_item" } & LineCard)
+  | { kind: "program"; program_key: string; title: string; exhibit_family: string; latest_cycle: string | null;
+      source_pdf_link: string | null;
+      series: { fiscal_year: number; amount_thousands: number; amount_type: AmountType; source_cycle: string }[] }
+  | { kind: "total"; label: string; lines: number; fiscal_year: number; in_title_only: boolean; search_url: string;
+      prior_year_amount: number | null; current_year_amount: number | null; budget_year_amount: number | null;
+      top_lines: LineCard[] }
+);
+
+export interface Answer {
+  status: "answered" | "partial" | "no_match" | "refused";
+  answer: string;
+  citations: Citation[];
+  unverified_figures: string[];
+  warnings: string[];
+  lookups: { tool: string; input: Record<string, unknown> }[];
+  fallback_used: boolean;
+}
+
+export const fetchAskStatus = (signal?: AbortSignal) =>
+  getJson<{ enabled: boolean; max_question_chars: number }>("/api/ask", signal);
+
+export async function ask(question: string, history: { question: string; answer: string }[]): Promise<Answer> {
+  const resp = await fetch("/api/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, history }),
+  });
+  if (resp.status === 401) throw new PrivateError();
+  if (!resp.ok) {
+    const detail = await resp.json().then((j) => j.detail, () => null);
+    throw new Error(typeof detail === "string" ? detail : `${resp.status} ${resp.statusText}`);
+  }
+  return resp.json() as Promise<Answer>;
+}

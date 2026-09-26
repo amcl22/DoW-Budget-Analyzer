@@ -100,7 +100,7 @@ export function ProgramPage({ programKey }: { programKey: string }) {
     <div className="app program-page">
       <nav className="crumbs">
         <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
-        <Link className="back" href="/watchlist">★ Team watchlist</Link>
+        <span className="crumb-right"><Link className="back" href="/ask">Ask a question</Link><Link className="back" href="/watchlist">★ Team watchlist</Link></span>
       </nav>
 
       <header className="program-head">
