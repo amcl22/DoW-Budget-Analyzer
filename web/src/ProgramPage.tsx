@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchProgram, setWatch, type HistoryRow, type ProgramDetail } from "./api";
 import { FundingChart, TYPE_LABEL } from "./FundingChart";
 import { fmtCount, fmtM, fmtMoney, fmtPct } from "./format";
+import { AskLink } from "./AskLink";
 import { Link } from "./router";
 import { lastSearchUrl } from "./SearchPage";
 
@@ -100,7 +101,7 @@ export function ProgramPage({ programKey }: { programKey: string }) {
     <div className="app program-page">
       <nav className="crumbs">
         <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
-        <span className="crumb-right"><Link className="back" href="/ask">Ask a question</Link><Link className="back" href="/watchlist">★ Team watchlist</Link></span>
+        <span className="crumb-right"><AskLink className="back" /><Link className="back" href="/watchlist">★ Team watchlist</Link></span>
       </nav>
 
       <header className="program-head">

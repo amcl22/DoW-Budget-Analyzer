@@ -95,12 +95,13 @@ on). Put it behind HTTPS, since the host terminates TLS and the app marks the co
 from `X-Forwarded-Proto`. Then run `budget share-link` with the public URL. The image hasn't
 been built in the development environment, which had no Docker daemon.
 
-## Hosting on Cloudflare
+## Hosting (free)
 
-`deploy/cloudflare/` runs the app on Cloudflare Containers, with the data in a Neon Postgres.
-`deploy/cloudflare/README.md` has the step-by-step guide: create the database, load it
-(`deploy/load-database.sh`), set the secrets, deploy, share the link. There is also an
-optional GitHub Actions deploy on push (`.github/workflows/deploy-cloudflare.yml`).
+`render.yaml` runs the app on Render's free plan, with the data in a free Neon Postgres and no
+credit card needed. `deploy/README.md` has the click-by-click guide: create the database, load
+it (the **Load database** GitHub workflow restores `deploy/data/dow-budget.dump`), deploy the
+Blueprint, share the link. Free Render apps sleep after 15 idle minutes and take about a
+minute to wake.
 
 ## Team watchlist
 
@@ -127,8 +128,8 @@ citation ref. The server then checks the answer before returning it:
 - **No match means saying so.** If nothing in the data answers the question, the status is
   `no_match` and the answer says what was searched. Partial answers are marked `partial`.
 
-To turn it on, set `ANTHROPIC_API_KEY`. Without it, `/ask` explains that Q&A is off, and the
-rest of the app is unaffected. Optional settings:
+To turn it on, set `ANTHROPIC_API_KEY`. Without it (the default on the free hosting), the Ask
+link is hidden, `/ask` explains that Q&A is off, and the rest of the app is unaffected. Optional settings:
 
 | Variable | Default | |
 |---|---|---|

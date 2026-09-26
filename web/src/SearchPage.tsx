@@ -3,6 +3,7 @@ import { exportUrl, fetchFacets, fetchSearch, PAGE_SIZE, type Facets, type Query
 import { Filters } from "./Filters";
 import { ResultsTable } from "./ResultsTable";
 import { fmtCount, fmtMoney } from "./format";
+import { AskLink } from "./AskLink";
 import { Link } from "./router";
 
 const LATEST = "latest";   // URL has no cycle: use the newest release once facets load
@@ -133,7 +134,7 @@ export function SearchPage() {
     <div className="app">
       <header className="masthead">
         <div className="brand">
-          <h1>DoW Budget Search <Link className="nav-link" href="/ask">Ask a question</Link><Link className="nav-link" href="/watchlist">★ Team watchlist</Link></h1>
+          <h1>DoW Budget Search <AskLink className="nav-link" /><Link className="nav-link" href="/watchlist">★ Team watchlist</Link></h1>
           <p>
             RDT&amp;E (R-1) and Procurement (P-1) line items, President's Budget
             {facets && facets.cycles.length > 0 &&

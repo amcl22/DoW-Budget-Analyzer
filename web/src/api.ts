@@ -273,3 +273,11 @@ export async function ask(question: string, history: { question: string; answer:
   }
   return resp.json() as Promise<Answer>;
 }
+
+let askStatus: Promise<boolean> | null = null;
+
+/** Whether this server has Q&A switched on (asked once per page load). */
+export function askEnabled(): Promise<boolean> {
+  askStatus ??= fetchAskStatus().then((s) => s.enabled, () => false);
+  return askStatus;
+}
