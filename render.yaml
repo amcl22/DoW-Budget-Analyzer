@@ -1,0 +1,25 @@
+# Render Blueprint: the app on Render's free plan, deployed from this repo on every push to main.
+# Setup steps: deploy/README.md. The database is a free Neon Postgres (Render's own free
+# database is deleted after 30 days), loaded by the "Load database" GitHub workflow.
+services:
+  - type: web
+    name: dow-budget-search
+    runtime: docker
+    plan: free
+    region: oregon
+    repo: https://github.com/amcl22/DoW-Budget-Analyzer
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: commit
+    envVars:
+      # asked for when the Blueprint is created: the Neon connection string
+      - key: DATABASE_URL
+        sync: false
+      # asked for too: the team-link secret (letters and digits, 32 or more)
+      - key: ACCESS_TOKEN
+        sync: false
+      - key: COOKIE_SECURE
+        value: "1"
+      # Q&A (/ask) stays off: it needs ANTHROPIC_API_KEY, which is deliberately not set
