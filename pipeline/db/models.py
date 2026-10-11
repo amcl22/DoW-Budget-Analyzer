@@ -228,4 +228,38 @@ class ProgramWatch(Base):
     program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"))
     user_id: Mapped[str | None] = mapped_column(Text)
     note: Mapped[str | None] = mapped_column(Text)
+    added_by: Mapped[str | None] = mapped_column(Text)          # optional name given when starring
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WatchEvent(Base):
+    """Every star and unstar on the team watchlist, so the team can see who changed what."""
+
+    __tablename__ = "watch_event"
+    __table_args__ = (CheckConstraint("action IN ('watch', 'unwatch')", name="ck_watch_event_action"),)
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    program_id: Mapped[int] = mapped_column(ForeignKey("program.id", ondelete="CASCADE"))
+    action: Mapped[str] = mapped_column(Text)
+    actor: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class LineItemExplanation(Base):
+    """The government's own reason for a funding change, quoted from an R-2 justification book."""
+
+    __tablename__ = "line_item_explanation"
+    __table_args__ = (
+        CheckConstraint("kind IN ('change_summary', 'increase_decrease')", name="ck_explanation_kind"),
+    )
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    line_item_id: Mapped[int] = mapped_column(ForeignKey("budget_line_item.id", ondelete="CASCADE"), index=True)
+    source_document_id: Mapped[int] = mapped_column(ForeignKey("source_document.id"))
+    kind: Mapped[str] = mapped_column(Text)        # change_summary | increase_decrease
+    project: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[str | None] = mapped_column(Text)
+    from_fy: Mapped[int | None] = mapped_column(Integer)
+    to_fy: Mapped[int | None] = mapped_column(Integer)
+    body: Mapped[str] = mapped_column(Text)
+    page_number: Mapped[int] = mapped_column(Integer)

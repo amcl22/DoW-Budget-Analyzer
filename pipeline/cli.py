@@ -197,6 +197,8 @@ def _ingest_one(fy: int, exhibit: str, cycle: str | None, publish: bool, refresh
             publish_run(session, run.id)
             session.commit()
             typer.echo(f"Run {run.id} validated and published.")
+            if exhibit == "R-1" and books:
+                _refresh_explanations(session)
         else:
             typer.echo(f"Run {run.id} validated. Publish with: budget publish {run.id}")
         return True
@@ -246,6 +248,23 @@ def ingest_all(
         raise typer.Exit(1)
 
 
+def _refresh_explanations(session: Session) -> None:
+    from .explanations import refresh_explanations
+
+    stats = refresh_explanations(session)
+    session.commit()
+    typer.echo(f"Funding-change explanations: {stats['rows']} from {stats['sections']} R-2 sections"
+               + (f" ({stats['missing_books']} books not on disk)" if stats["missing_books"] else ""))
+
+
+@app.command()
+def explanations() -> None:
+    """Re-extract the official funding-change explanations (R-2 'Change Summary Explanation' and
+    'Increase/Decrease Statement') for every published R-1 line with a justification page."""
+    with Session(get_engine()) as session:
+        _refresh_explanations(session)
+
+
 @app.command("discover-books")
 def discover_books_cmd(fy: int = typer.Option(..., help="Fiscal year of the budget release")) -> None:
     """Read the justification index pages and write sources/fy{FY}_books.yaml."""
@@ -289,6 +308,8 @@ def publish(run_id: int) -> None:
             typer.echo(str(e), err=True)
             raise typer.Exit(1) from None
         session.commit()
+        if session.get(IngestionRun, run_id).exhibit_type == "R-1":
+            _refresh_explanations(session)
     typer.echo(f"Run {run_id} published.")
 
 

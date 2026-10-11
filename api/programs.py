@@ -108,6 +108,21 @@ def _cost_elements(conn: Connection, line_ids: list[int]) -> list[dict]:
     return list(out.values())
 
 
+def _explanations(conn: Connection, program_id: int) -> list[dict]:
+    """The government's own reasons for funding changes, from the R-2 justification books,
+    newest release first, each with a link to the page it is quoted from."""
+    return [dict(r) for r in conn.execute(text("""
+        SELECT li.budget_cycle, li.fiscal_year, x.kind, x.project, x.title, x.from_fy, x.to_fy, x.body,
+               x.page_number, d.url || '#page=' || x.page_number AS link
+        FROM line_item_explanation x
+        JOIN budget_line_item li ON li.id = x.line_item_id
+        JOIN ingestion_run r ON r.id = li.ingestion_run_id AND r.status = 'published'
+        JOIN source_document d ON d.id = x.source_document_id
+        WHERE li.program_id = :pid
+        ORDER BY li.fiscal_year DESC, (x.kind = 'change_summary') DESC, x.page_number, x.id
+    """), {"pid": program_id}).mappings()]
+
+
 def is_watched(conn: Connection, program_id: int, user_id: str | None = TEAM) -> bool:
     return conn.execute(text(
         "SELECT 1 FROM program_watch WHERE program_id = :pid AND coalesce(user_id, '') = coalesce(:uid, '')"
@@ -143,27 +158,51 @@ def program_detail(conn: Connection, key: str) -> dict | None:
         "description": dict(description) if description else None,
         "sources": _sources(conn, pid),
         "cost_elements": _cost_elements(conn, [l["id"] for l in latest_lines]) if program["exhibit_family"] == "PROC" else [],
+        "explanations": _explanations(conn, pid),
         "watched": is_watched(conn, pid),
+        "watch": _watch_info(conn, pid),
         "flag_threshold": FLAG_THRESHOLD,
     }
 
 
-def set_watch(conn: Connection, program_id: int, watched: bool, user_id: str | None = TEAM) -> None:
+def _watch_info(conn: Connection, program_id: int) -> dict | None:
+    row = conn.execute(text(
+        "SELECT added_by, created_at FROM program_watch WHERE program_id = :pid AND user_id IS NULL"
+    ), {"pid": program_id}).mappings().first()
+    return dict(row) if row else None
+
+
+def set_watch(conn: Connection, program_id: int, watched: bool, user_id: str | None = TEAM,
+              actor: str | None = None) -> None:
+    """Star or unstar. With no accounts anyone with the team link can do either, so every
+    change is logged in watch_event with the name the person gave (if any)."""
     if watched:
-        conn.execute(text("""
-            INSERT INTO program_watch (program_id, user_id) VALUES (:pid, :uid)
+        changed = conn.execute(text("""
+            INSERT INTO program_watch (program_id, user_id, added_by) VALUES (:pid, :uid, :actor)
             ON CONFLICT (program_id, coalesce(user_id, '')) DO NOTHING
-        """), {"pid": program_id, "uid": user_id})
+        """), {"pid": program_id, "uid": user_id, "actor": actor}).rowcount
     else:
-        conn.execute(text(
+        changed = conn.execute(text(
             "DELETE FROM program_watch WHERE program_id = :pid AND coalesce(user_id, '') = coalesce(:uid, '')"
-        ), {"pid": program_id, "uid": user_id})
+        ), {"pid": program_id, "uid": user_id}).rowcount
+    if changed:
+        conn.execute(text("INSERT INTO watch_event (program_id, action, actor) VALUES (:pid, :action, :actor)"),
+                     {"pid": program_id, "action": "watch" if watched else "unwatch", "actor": actor})
+
+
+def watch_events(conn: Connection, limit: int = 25) -> list[dict]:
+    """Recent stars and unstars, newest first."""
+    return [dict(r) for r in conn.execute(text("""
+        SELECT e.action, e.actor, e.created_at, p.program_key, p.latest_title
+        FROM watch_event e JOIN program p ON p.id = e.program_id
+        ORDER BY e.created_at DESC, e.id DESC LIMIT :limit
+    """), {"limit": limit}).mappings()]
 
 
 def watchlist(conn: Connection, user_id: str | None = TEAM) -> list[dict]:
     """Watched programs with their latest-release totals (the dashboard, step 6, builds on it)."""
     return [dict(r) for r in conn.execute(text("""
-        SELECT p.id AS program_id, p.program_key, p.latest_title, p.exhibit_family, w.created_at,
+        SELECT p.id AS program_id, p.program_key, p.latest_title, p.exhibit_family, w.created_at, w.added_by,
                latest.budget_cycle, latest.service_branch, latest.current_year_amount, latest.budget_year_amount
         FROM program_watch w
         JOIN program p ON p.id = w.program_id
@@ -204,4 +243,5 @@ def dashboard(conn: Connection) -> dict:
         "budget_year_total": sum(i["budget_year_amount"] or 0 for i in items),
         "current_year_total": sum(i["current_year_amount"] or 0 for i in items),
         "flag_threshold": FLAG_THRESHOLD,
+        "events": watch_events(conn),
     }
