@@ -99,7 +99,7 @@ been built in the development environment, which had no Docker daemon.
 
 `render.yaml` runs the app on Render's free plan, with the data in a free Neon Postgres and no
 credit card needed. `deploy/README.md` has the click-by-click guide: create the database, load
-it (the **Load database** GitHub workflow restores `deploy/data/dow-budget.dump`), deploy the
+it (the **Load database** GitHub workflow restores `deploy/data/dow-budget.dump` and keeps the team watchlist), deploy the
 Blueprint, share the link. Free Render apps sleep after 15 idle minutes and take about a
 minute to wake.
 
@@ -107,8 +107,27 @@ minute to wake.
 
 `/watchlist` (the ★ link at the top) is the team dashboard from spec 4.4. It shows the
 programs anyone has watched, with current and budget-year amounts, year-over-year change
-(±20% flagged, largest moves first) and a trend sparkline. With link-only access, there is one
-shared watchlist. `GET /api/dashboard` returns the same data.
+(±20% flagged, largest moves first) and a trend sparkline. With link-only access there is one
+shared watchlist, and anyone with the link can star or unstar. The first star in a browser
+asks for an optional name, which is shown next to the star, and **Recent changes** lists every
+star and unstar with who made it (`watch_event`). `GET /api/dashboard` returns the same data.
+
+## Reading changes, and why they happened
+
+- **$ change and % change** are both shown. Where a percentage would mislead, the table says
+  **New start** (no current-year funding), **Ending** (nothing requested), or marks the
+  percentage **small base** (current year under $5M). Example: Counterspace Systems
+  procurement goes from $2.0M to $459.5M, +22,567%. That's correct per the source page; the
+  base is just tiny.
+- Each row has a small **trend** (prior, current and budget year). Above the results, **Funding
+  trend for these results** totals every matching line by fiscal year across all releases.
+- **Why did funding change?** on a program page quotes the government's own explanations from
+  the R-2 justification books (`pipeline/explanations.py`): the *Change Summary Explanation*
+  and each project's *Increase/Decrease Statement*, with page links. They're quoted, not
+  summarized. They exist where R-2 books are loaded (Defense-Wide FY2024–FY2027, Navy FY2027).
+  `budget explanations` re-extracts them; ingestion does it after each R-1 publish.
+- `/glossary` explains the acronyms, how to read the numbers, and what isn't covered (O&M,
+  military personnel, construction, Army/Air Force/Space Force R-2s, P-40s).
 
 ## Ask a question (Q&A)
 

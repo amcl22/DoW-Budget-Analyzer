@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchDashboard, setWatch, type Dashboard } from "./api";
-import { fmtM, fmtMoney, fmtPct } from "./format";
+import { changeKind, fmtDate, fmtM, fmtMoney, fmtPct } from "./format";
 import { Link, programPath } from "./router";
 import { lastSearchUrl } from "./SearchPage";
 import { Sparkline } from "./Sparkline";
@@ -30,13 +30,22 @@ export function WatchlistPage() {
 
   return (
     <div className="app">
-      <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
+      <nav className="crumbs">
+        <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
+        <Link className="back" href="/glossary">Glossary &amp; coverage</Link>
+      </nav>
       <header className="program-head">
         <div>
           <h1>Team watchlist</h1>
           <p className="muted">
             Programs anyone on the team has watched, largest year-over-year moves first.
             {data && ` Changes of ${Math.round(data.flag_threshold * 100)}% or more are flagged.`}
+          </p>
+          <p className="muted small how-shared">
+            <strong>How it works:</strong> there are no logins, so this list is shared by everyone with the team
+            link, and anyone can add or remove a star. When you first star a program you're asked for a name
+            (optional); it appears next to the star, and <a href="#history">Recent changes</a> below records every
+            add and remove.
           </p>
         </div>
       </header>
@@ -69,6 +78,7 @@ export function WatchlistPage() {
                   <th className="plain num">Budget year</th>
                   <th className="plain num">Change</th>
                   <th className="plain">Trend</th>
+                  <th className="plain">Starred</th>
                   <th className="plain"><span className="sr-only">Remove</span></th>
                 </tr>
               </thead>
@@ -89,11 +99,16 @@ export function WatchlistPage() {
                       <td className="num">{fmtM(w.current_year_amount)}{w.fiscal_year && <small className="qty">FY{w.fiscal_year - 1}</small>}</td>
                       <td className="num">{fmtM(w.budget_year_amount)}{w.fiscal_year && <small className="qty">FY{w.fiscal_year}</small>}</td>
                       <td className="num">
-                        {w.change_pct === null ? "—" : w.flagged
+                        {changeKind(w.current_year_amount, w.budget_year_amount) === "new" ? <span className="badge new">New start</span>
+                          : changeKind(w.current_year_amount, w.budget_year_amount) === "small-base" && w.change_pct !== null
+                            ? <span className={`change small-base ${cls}`} title="From a current year under $5M: compare the dollar amounts">{fmtPct(w.change_pct)}<small>small base</small></span>
+                          : w.change_pct === null ? "—" : w.flagged
                           ? <span className={`badge ${cls}`}>{fmtPct(w.change_pct)}</span>
                           : <span className={`change ${cls}`}>{fmtPct(w.change_pct)}</span>}
                       </td>
                       <td><Sparkline series={w.series} /></td>
+                      <td className="small nowrap">{w.added_by ?? <span className="muted">anonymous</span>}<br />
+                        <span className="muted">{fmtDate(w.created_at)}</span></td>
                       <td><button className="linklike" onClick={() => unwatch(w.program_key)}>Remove</button></td>
                     </tr>
                   );
@@ -105,6 +120,21 @@ export function WatchlistPage() {
             Amounts in $ millions. Trend: best available figure per fiscal year; dashed where it is an out-year estimate.
           </p>
         </>
+      )}
+
+      {data && data.events.length > 0 && (
+        <section className="panel" id="history" style={{ marginTop: 16 }}>
+          <h2>Recent changes</h2>
+          <ul className="events">
+            {data.events.map((e, i) => (
+              <li key={i}>
+                <span className="muted">{fmtDate(e.created_at)}</span>{" "}
+                <strong>{e.actor ?? "Someone"}</strong> {e.action === "watch" ? "starred" : "removed"}{" "}
+                <Link href={programPath(e.program_key)}>{e.latest_title}</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

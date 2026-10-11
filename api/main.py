@@ -96,24 +96,29 @@ def program_endpoint(conn: Conn, key: str) -> dict:
     return detail
 
 
-def _watch(conn: Connection, key: str, watched: bool) -> dict:
+def _watch(conn: Connection, key: str, watched: bool, name: str | None) -> dict:
     program = get_program(conn, key)
     if program is None:
         raise HTTPException(404, f"no program {key!r}")
-    set_watch(conn, program["id"], watched)
+    set_watch(conn, program["id"], watched, actor=(name or "").strip()[:60] or None)
     conn.commit()
     return {"program_key": key, "watched": watched}
 
 
+WatchName = Annotated[str | None, Body(embed=True, max_length=60,
+                                       description="Optional: who is starring, shown on the watchlist")]
+
+
 @app.put("/api/programs/{key}/watch")
-def watch_endpoint(conn: Conn, key: str) -> dict:
-    """Pin a program to the team watchlist (personal watchlists arrive with accounts)."""
-    return _watch(conn, key, True)
+def watch_endpoint(conn: Conn, key: str, name: WatchName = None) -> dict:
+    """Star a program on the shared team watchlist. Anyone with the team link can star or
+    unstar; each change is logged with the name given (GET /api/dashboard lists them)."""
+    return _watch(conn, key, True, name)
 
 
 @app.delete("/api/programs/{key}/watch")
-def unwatch_endpoint(conn: Conn, key: str) -> dict:
-    return _watch(conn, key, False)
+def unwatch_endpoint(conn: Conn, key: str, name: WatchName = None) -> dict:
+    return _watch(conn, key, False, name)
 
 
 @app.get("/api/watches")
@@ -157,7 +162,7 @@ EXPORT_COLUMNS = [
     "organization", "budget_activity", "budget_activity_title", "line_number", "program_element",
     "line_item_number", "program_title", "prior_year_amount", "current_year_amount", "budget_year_amount",
     "budget_year_discretionary", "budget_year_mandatory", "prior_year_quantity", "current_year_quantity",
-    "budget_year_quantity", "change_pct", "source_pdf_link",
+    "budget_year_quantity", "change_amount", "change_pct", "source_pdf_link",
 ]
 
 

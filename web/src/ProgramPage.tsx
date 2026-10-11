@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchProgram, setWatch, type HistoryRow, type ProgramDetail } from "./api";
+import { fetchProgram, setWatch, setWatcherName, watcherName, type Explanation, type HistoryRow, type ProgramDetail } from "./api";
 import { FundingChart, TYPE_LABEL } from "./FundingChart";
-import { fmtCount, fmtM, fmtMoney, fmtPct } from "./format";
+import { changeKind, fmtChange, fmtCount, fmtDate, fmtM, fmtMoney, fmtPct, SMALL_BASE } from "./format";
 import { AskLink } from "./AskLink";
 import { Link } from "./router";
 import { lastSearchUrl } from "./SearchPage";
 
-function ChangeBadge({ pct, threshold }: { pct: number | null; threshold: number }) {
+function ChangeBadge({ pct, threshold, base }: { pct: number | null; threshold: number; base?: number | null }) {
   if (pct === null) return <span className="muted">—</span>;
+  if (base !== undefined && base !== null && Math.abs(base) < SMALL_BASE) {
+    return <span className="change small-base" title={`From only ${fmtMoney(base)}: compare the dollar amounts`}>{fmtPct(pct)}<small>small base</small></span>;
+  }
   const cls = pct > 0 ? "up" : pct < 0 ? "down" : "";
   return Math.abs(pct) >= threshold
     ? <span className={`badge ${cls}`} title={`Change of ${Math.round(threshold * 100)}% or more`}>{fmtPct(pct)}</span>
@@ -21,6 +24,56 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: React
       <span className="stat-value">{value}</span>
       {sub && <span className="stat-sub">{sub}</span>}
     </div>
+  );
+}
+
+/** The government's own reasons, quoted from the R-2 justification book, newest release first. */
+function WhyChanged({ items, cycle, exhibitFamily, service }: {
+  items: Explanation[]; cycle: string | null; exhibitFamily: string; service: string | undefined;
+}) {
+  const latest = items.filter((e) => e.budget_cycle === cycle);
+  const earlier = items.filter((e) => e.budget_cycle !== cycle);
+  const list = (rows: Explanation[]) => (
+    <ul className="why-list">
+      {rows.map((e, i) => (
+        <li key={i}>
+          <div className="why-head">
+            {e.kind === "change_summary"
+              ? <strong>Change from the previous budget's plan</strong>
+              : <strong>{e.title ?? e.project ?? "Project"}{e.from_fy && e.to_fy ? `: FY${e.from_fy} → FY${e.to_fy}` : ""}</strong>}
+            {e.kind !== "change_summary" && e.project && e.title && <span className="muted small"> · Project {e.project}</span>}
+            <a href={e.link} target="_blank" rel="noopener noreferrer" className="small"> {e.budget_cycle} R-2 p.{e.page_number} ↗</a>
+          </div>
+          <blockquote>{e.body}</blockquote>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <section className="panel">
+      <h2>Why did funding change?</h2>
+      {items.length === 0 ? (
+        <p className="muted small">
+          No official explanation is available for this {exhibitFamily === "PROC" ? "procurement line" : "program"}.
+          {" "}Explanations are quoted from the R-2 justification books, which are loaded for Defense-Wide programs
+          (FY2024–FY2027) and Navy programs (FY2027).
+          {exhibitFamily === "PROC" ? " Procurement justifications (P-40) aren't loaded yet."
+            : service && !["Defense-Wide", "Navy"].includes(service) ? ` ${service} books aren't loaded yet.` : ""}
+          {" "}The source pages below have the full justification.
+        </p>
+      ) : (
+        <>
+          <p className="muted small">Quoted from the {cycle ?? "latest"} budget justification, not summarized. Follow the page link for context.</p>
+          {latest.length > 0 ? list(latest) : <p className="muted small">None in the {cycle} release.</p>}
+          {earlier.length > 0 && (
+            <details>
+              <summary className="small">Earlier releases ({earlier.length})</summary>
+              {list(earlier)}
+            </details>
+          )}
+        </>
+      )}
+    </section>
   );
 }
 
@@ -71,16 +124,21 @@ export function ProgramPage({ programKey }: { programKey: string }) {
   const py = sum((l) => l.prior_year_amount);
   const byQty = sum((l) => l.budget_year_quantity);
   const change = cy ? ((by ?? 0) - cy) / cy : null;
+  const kind = changeKind(cy, by);
   const outyears = series.filter((s) => s.amount_type === "estimate");
   const isProc = program.exhibit_family === "PROC";
   const description = data.description?.raw_description_text ?? "";
   const longDescription = description.length > 900;
 
   const toggleWatch = async () => {
+    if (!data.watched && watcherName() === null) {
+      // asked once per browser; Cancel or an empty answer stars anonymously and isn't asked again
+      setWatcherName(window.prompt("Your name, shown on the team watchlist next to this star (optional):", "") ?? "");
+    }
     setWatchBusy(true);
     try {
       const watched = await setWatch(program.program_key, !data.watched);
-      setData({ ...data, watched });
+      setData({ ...data, watched, watch: watched ? { added_by: watcherName() || null, created_at: new Date().toISOString() } : null });
     } catch (e) {
       setError(String(e));
     } finally {
@@ -101,7 +159,7 @@ export function ProgramPage({ programKey }: { programKey: string }) {
     <div className="app program-page">
       <nav className="crumbs">
         <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
-        <span className="crumb-right"><AskLink className="back" /><Link className="back" href="/watchlist">★ Team watchlist</Link></span>
+        <span className="crumb-right"><AskLink className="back" /><Link className="back" href="/watchlist">★ Team watchlist</Link><Link className="back" href="/glossary">Glossary</Link></span>
       </nav>
 
       <header className="program-head">
@@ -117,16 +175,26 @@ export function ProgramPage({ programKey }: { programKey: string }) {
             {latest.length > 1 && <span>{latest.length} lines in {data.latest_cycle}</span>}
           </div>
         </div>
-        <button className={data.watched ? "watch on" : "watch"} onClick={toggleWatch} disabled={watchBusy}
-                aria-pressed={data.watched}>
-          <span aria-hidden="true">{data.watched ? "★" : "☆"}</span> {data.watched ? "Watching" : "Watch"}
-        </button>
+        <div className="watch-box">
+          <button className={data.watched ? "watch on" : "watch"} onClick={toggleWatch} disabled={watchBusy}
+                  aria-pressed={data.watched}>
+            <span aria-hidden="true">{data.watched ? "★" : "☆"}</span> {data.watched ? "Watching" : "Watch"}
+          </button>
+          {data.watched && data.watch && (
+            <span className="muted small watch-by">
+              Starred{data.watch.added_by ? ` by ${data.watch.added_by}` : ""} on {fmtDate(data.watch.created_at)}
+            </span>
+          )}
+        </div>
       </header>
 
       {fy && (
         <section className="stats" aria-label={`${data.latest_cycle} summary`}>
           <Stat label={`FY${fy} request`} value={fmtMoney(by)}
-                sub={<><ChangeBadge pct={change} threshold={threshold} /> vs FY{fy - 1}{byQty ? ` · ${fmtCount(byQty)} units` : ""}</>} />
+                sub={kind === "new" ? <><span className="badge new">New start</span> no FY{fy - 1} funding</>
+                  : kind === "ending" ? <><span className="badge ending">Ending</span> none requested</>
+                  : <><ChangeBadge pct={change} threshold={threshold} />{kind === "small-base" && <span className="muted"> (small base)</span>}
+                    {" "}{fmtChange((by ?? 0) - (cy ?? 0))} vs FY{fy - 1}{byQty ? ` · ${fmtCount(byQty)} units` : ""}</>} />
           <Stat label={`FY${fy - 1} current`} value={fmtMoney(cy)} sub={data.latest_cycle ?? undefined} />
           <Stat label={`FY${fy - 2} actual`} value={fmtMoney(py)} />
           {outyears.length > 0 && (
@@ -135,6 +203,9 @@ export function ProgramPage({ programKey }: { programKey: string }) {
           )}
         </section>
       )}
+
+      <WhyChanged items={data.explanations} cycle={data.latest_cycle} exhibitFamily={program.exhibit_family}
+                  service={lead?.service_branch} />
 
       <section className="panel">
         <h2>Funding history</h2>
@@ -161,8 +232,9 @@ export function ProgramPage({ programKey }: { programKey: string }) {
               </tr>
             </thead>
             <tbody>
-              {years.map((y) => {
+              {years.map((y, yi) => {
                 const best = series.find((s) => s.fiscal_year === y)!;
+                const prevBest = yi > 0 ? series.find((s) => s.fiscal_year === years[yi - 1]) : undefined;
                 return (
                   <tr key={y}>
                     <td className="nowrap"><strong>FY{y}</strong></td>
@@ -176,7 +248,7 @@ export function ProgramPage({ programKey }: { programKey: string }) {
                         </td>
                       );
                     })}
-                    <td className="num"><ChangeBadge pct={best.change_pct} threshold={threshold} /></td>
+                    <td className="num"><ChangeBadge pct={best.change_pct} threshold={threshold} base={prevBest?.amount_thousands} /></td>
                   </tr>
                 );
               })}

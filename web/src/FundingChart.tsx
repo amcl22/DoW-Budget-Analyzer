@@ -14,7 +14,6 @@ export const TYPE_LABEL: Record<AmountType, string> = {
 const TYPE_ORDER: AmountType[] = ["actual", "enacted", "cr", "request", "estimate"];
 const typeVar = (t: AmountType) => `var(--amt-${t === "cr" ? "enacted" : t})`;
 
-const HEIGHT = 260;
 const M = { top: 22, right: 12, bottom: 30, left: 60 };
 
 function niceMax(v: number): number {
@@ -47,7 +46,9 @@ function barPath(x: number, w: number, y0: number, y1: number): string {
   return `M${x},${y0} V${y1 - r} Q${x},${y1} ${x + r},${y1} H${x + w - r} Q${x + w},${y1} ${x + w},${y1 - r} V${y0} Z`;
 }
 
-export function FundingChart({ series, budgetYear }: { series: SeriesPoint[]; budgetYear: number | null }) {
+export function FundingChart({ series, budgetYear, height: HEIGHT = 260 }: {
+  series: SeriesPoint[]; budgetYear: number | null; height?: number;
+}) {
   const [wrap, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   if (series.length === 0) return <p className="muted">No funding reported.</p>;

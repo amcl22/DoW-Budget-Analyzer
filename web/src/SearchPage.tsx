@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { exportUrl, fetchFacets, fetchSearch, PAGE_SIZE, type Facets, type Query, type SearchResponse, type SortKey } from "./api";
 import { Filters } from "./Filters";
 import { ResultsTable } from "./ResultsTable";
+import { ResultsTrend } from "./ResultsTrend";
 import { fmtCount, fmtMoney } from "./format";
 import { AskLink } from "./AskLink";
 import { Link } from "./router";
@@ -134,7 +135,7 @@ export function SearchPage() {
     <div className="app">
       <header className="masthead">
         <div className="brand">
-          <h1>DoW Budget Search <AskLink className="nav-link" /><Link className="nav-link" href="/watchlist">★ Team watchlist</Link></h1>
+          <h1>DoW Budget Search <AskLink className="nav-link" /><Link className="nav-link" href="/watchlist">★ Team watchlist</Link><Link className="nav-link" href="/glossary">Glossary &amp; coverage</Link></h1>
           <p>
             RDT&amp;E (R-1) and Procurement (P-1) line items, President's Budget
             {facets && facets.cycles.length > 0 &&
@@ -181,6 +182,8 @@ export function SearchPage() {
           <span className="loading">Loading…</span>
         )}
       </section>
+
+      {data && data.total > 0 && <ResultsTrend data={data} budgetYear={fiscalYear} />}
 
       {data && (
         <ResultsTable

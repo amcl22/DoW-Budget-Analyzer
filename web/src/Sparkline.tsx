@@ -1,9 +1,11 @@
-import type { DashboardItem } from "./api";
+import type { AmountType } from "./api";
 import { fmtMoney } from "./format";
 
 /** Trend of the best-available figure per fiscal year. One series, so no legend; the exact
  * numbers are on the program page and in each point's tooltip. */
-export function Sparkline({ series, width = 132, height = 32 }: { series: DashboardItem["series"]; width?: number; height?: number }) {
+type Point = { fiscal_year: number; amount_thousands: number; amount_type: AmountType };
+
+export function Sparkline({ series, width = 132, height = 32 }: { series: Point[]; width?: number; height?: number }) {
   if (series.length < 2) return <span className="muted">—</span>;
   const vals = series.map((s) => s.amount_thousands);
   const lo = Math.min(0, ...vals);
@@ -22,7 +24,7 @@ export function Sparkline({ series, width = 132, height = 32 }: { series: Dashbo
       <path d={line(firm, 0)} className="spark-line" />
       {est.length > 1 && <path d={line(est, firm.length - 1)} className="spark-line est" />}
       {series.map((s, i) => (
-        <circle key={s.fiscal_year} cx={x(i)} cy={y(s.amount_thousands)} r={i === firm.length - 1 ? 4 : 7}
+        <circle key={s.fiscal_year} cx={x(i)} cy={y(s.amount_thousands)} r={i === firm.length - 1 ? (height < 30 ? 3 : 4) : 7}
                 className={i === firm.length - 1 ? "spark-dot" : "spark-hit"}>
           <title>{`FY${s.fiscal_year}: ${fmtMoney(s.amount_thousands)} (${s.amount_type})`}</title>
         </circle>

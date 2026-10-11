@@ -1,6 +1,7 @@
 # Loads the budget data into the hosted database (the DATABASE_URL repository secret) from the
 # snapshot in deploy/data/dow-budget.dump. Run it from the Actions tab: "Load database" >
-# "Run workflow". Safe to re-run: it replaces what an earlier load left.
+# "Run workflow". Safe to re-run: it replaces the budget data and keeps the team watchlist
+# (stars, names and history) that is already there.
 name: Load database
 
 on:
@@ -9,19 +10,45 @@ on:
 jobs:
   load:
     runs-on: ubuntu-24.04
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Check the secret is set
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           [ -n "$DATABASE_URL" ] || { echo "::error::Add the DATABASE_URL repository secret first"; exit 1; }
       - name: Install the Postgres client
         run: sudo apt-get update -q && sudo apt-get install -yq postgresql-client
+      - name: Save the team watchlist
+        run: |
+          url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
+          # absent on a first load, or before the watchlist history existed: nothing to keep
+          psql "$url" -c "\copy (SELECT p.program_key, w.created_at, to_jsonb(w)->>'added_by' FROM program_watch w JOIN program p ON p.id = w.program_id WHERE w.user_id IS NULL) TO '$RUNNER_TEMP/watch.csv' CSV" || true
+          psql "$url" -c "\copy (SELECT p.program_key, e.action, e.actor, e.created_at FROM watch_event e JOIN program p ON p.id = e.program_id) TO '$RUNNER_TEMP/events.csv' CSV" || true
+          wc -l "$RUNNER_TEMP"/*.csv 2>/dev/null || echo "no watchlist yet"
       - name: Restore the snapshot
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
           pg_restore --no-owner --no-acl --clean --if-exists -d "$url" deploy/data/dow-budget.dump
+      - name: Put the team watchlist back
+        run: |
+          url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
+          touch "$RUNNER_TEMP/watch.csv" "$RUNNER_TEMP/events.csv"
+          psql "$url" -v ON_ERROR_STOP=1 <<SQL
+          CREATE TEMP TABLE saved_watch (program_key text, created_at timestamptz, added_by text);
+          CREATE TEMP TABLE saved_event (program_key text, action text, actor text, created_at timestamptz);
+          \copy saved_watch FROM '$RUNNER_TEMP/watch.csv' CSV
+          \copy saved_event FROM '$RUNNER_TEMP/events.csv' CSV
+          INSERT INTO program_watch (program_id, user_id, added_by, created_at)
+            SELECT DISTINCT ON (p.id) p.id, NULL, s.added_by, s.created_at
+            FROM saved_watch s JOIN program p ON p.program_key = s.program_key
+            ON CONFLICT DO NOTHING;
+          INSERT INTO watch_event (program_id, action, actor, created_at)
+            SELECT DISTINCT ON (s.program_key, s.action, s.created_at) p.id, s.action, s.actor, s.created_at
+            FROM saved_event s JOIN program p ON p.program_key = s.program_key;
+          SQL
+      - name: Check
+        run: |
+          url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
           psql "$url" -c "SELECT budget_cycle, exhibit_type, count(*) AS lines FROM line_item_flat GROUP BY 1, 2 ORDER BY 1, 2"
+          psql "$url" -c "SELECT count(*) AS explanations FROM line_item_explanation" -c "SELECT count(*) AS stars FROM program_watch"

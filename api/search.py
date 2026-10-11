@@ -5,7 +5,7 @@ Every user value is a bound parameter; sort keys and filters come from fixed whi
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from sqlalchemy import text
 from sqlalchemy.engine import Connection
@@ -18,6 +18,7 @@ MARK_START, MARK_END = "\u0002", "\u0003"
 
 CHANGE_PCT = """CASE WHEN coalesce(f.current_year_amount, 0) > 0
     THEN (coalesce(f.budget_year_amount, 0) - f.current_year_amount)::float / f.current_year_amount END"""
+CHANGE_AMOUNT = "(coalesce(f.budget_year_amount, 0) - coalesce(f.current_year_amount, 0))"
 
 SORTS = {
     "relevance": "rank",
@@ -32,6 +33,7 @@ SORTS = {
     "current": "f.current_year_amount",
     "budget": "f.budget_year_amount",
     "change": "change_pct",
+    "change_amount": "change_amount",
 }
 
 
@@ -118,6 +120,7 @@ def _select(p: SearchParams) -> tuple[str, dict]:
                EXISTS (SELECT 1 FROM program_watch w WHERE w.program_id = f.program_id AND w.user_id IS NULL)
                    AS watched,
                {CHANGE_PCT} AS change_pct,
+               {CHANGE_AMOUNT} AS change_amount,
                ({rank}) AS rank,
                CASE WHEN f.raw_description_text IS NULL THEN NULL ELSE {snippet} END AS snippet
         FROM line_item_flat f
@@ -134,9 +137,21 @@ def search(conn: Connection, p: SearchParams) -> dict:
     where, params, _ = _where(p)
     totals = conn.execute(text(f"""
         SELECT count(*) AS total, sum(f.budget_year_amount)::bigint AS budget_year_total,
-               sum(f.current_year_amount)::bigint AS current_year_total
+               sum(f.current_year_amount)::bigint AS current_year_total,
+               sum(f.prior_year_amount)::bigint AS prior_year_total
         FROM line_item_flat f JOIN budget_line_item li ON li.id = f.id {where}
     """), params).mappings().one()
+    # the same filters' totals in every release (ignoring the release filter), for the funding
+    # trend above the results
+    trend_where, trend_params, _ = _where(replace(p, cycle=None))
+    by_cycle = conn.execute(text(f"""
+        SELECT f.budget_cycle, f.fiscal_year, count(*) AS lines,
+               sum(f.prior_year_amount)::bigint AS prior_year_total,
+               sum(f.current_year_amount)::bigint AS current_year_total,
+               sum(f.budget_year_amount)::bigint AS budget_year_total
+        FROM line_item_flat f JOIN budget_line_item li ON li.id = f.id {trend_where}
+        GROUP BY f.budget_cycle, f.fiscal_year ORDER BY f.fiscal_year
+    """), trend_params).mappings().all()
     page_size = max(1, min(p.page_size, MAX_PAGE_SIZE))
     page = max(1, p.page)
     sql, params = _select(p)
@@ -146,6 +161,8 @@ def search(conn: Connection, p: SearchParams) -> dict:
         "total": totals["total"],
         "budget_year_total": totals["budget_year_total"],
         "current_year_total": totals["current_year_total"],
+        "prior_year_total": totals["prior_year_total"],
+        "totals_by_cycle": [dict(r) for r in by_cycle],
         "page": page,
         "page_size": page_size,
         "results": [dict(r) for r in rows],

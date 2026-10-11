@@ -240,3 +240,33 @@ def test_dashboard_lists_watched_programs_flagged_first(client):
     for key in ("0601102A", "2031A:5757A05111"):
         client.delete(f"/api/programs/{key}/watch")
     assert client.get("/api/dashboard").json()["watched"] == []
+
+
+def test_search_reports_dollar_change_and_totals_by_release(client):
+    data = _search(client, q="0601102A")
+    [row] = [r for r in data["results"] if r["program_element"] == "0601102A"]
+    assert row["change_amount"] == 215322 - 259178
+    assert data["prior_year_total"] is not None
+    [c] = data["totals_by_cycle"]
+    assert c["budget_cycle"] == "PB2027" and c["fiscal_year"] == 2027
+    assert c["budget_year_total"] == data["budget_year_total"]
+    # the trend ignores the release filter, so it can span releases
+    assert _search(client, q="0601102A", cycle="PB2027")["totals_by_cycle"] == data["totals_by_cycle"]
+    by_change = _search(client, sort="change_amount", order="asc", page_size=200)["results"]
+    assert [r["change_amount"] for r in by_change] == sorted(r["change_amount"] for r in by_change)
+
+
+def test_watch_records_who_and_logs_every_change(client):
+    key = "0601102A"
+    client.put(f"/api/programs/{key}/watch", json={"name": "  Pat  "})
+    detail = client.get(f"/api/programs/{key}").json()
+    assert detail["watch"]["added_by"] == "Pat"
+    client.put(f"/api/programs/{key}/watch", json={"name": "Sam"})       # already starred: no event
+    client.request("DELETE", f"/api/programs/{key}/watch", json={"name": "Sam"})
+    client.put(f"/api/programs/{key}/watch")                              # anonymous
+    d = client.get("/api/dashboard").json()
+    assert [(e["action"], e["actor"]) for e in d["events"][:3]] == [("watch", None), ("unwatch", "Sam"), ("watch", "Pat")]
+    assert d["watched"][0]["added_by"] is None
+    assert client.put(f"/api/programs/{key}/watch", json={"name": "x" * 61}).status_code == 422
+    client.delete(f"/api/programs/{key}/watch")
+    assert "explanations" in detail and detail["explanations"] == []

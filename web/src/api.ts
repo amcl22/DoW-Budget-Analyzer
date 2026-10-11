@@ -2,7 +2,7 @@
 
 export type SortKey =
   | "relevance" | "title" | "number" | "service" | "exhibit" | "account"
-  | "budget_activity" | "cycle" | "prior" | "current" | "budget" | "change";
+  | "budget_activity" | "cycle" | "prior" | "current" | "budget" | "change" | "change_amount";
 
 export interface Query {
   q: string;
@@ -50,6 +50,7 @@ export interface LineItem {
   include_in_toa: boolean;
   has_description: boolean;
   change_pct: number | null;
+  change_amount: number;
   snippet: string | null;
   watched: boolean;
 }
@@ -58,6 +59,11 @@ export interface SearchResponse {
   total: number;
   budget_year_total: number | null;
   current_year_total: number | null;
+  prior_year_total: number | null;
+  totals_by_cycle: {
+    budget_cycle: string; fiscal_year: number; lines: number;
+    prior_year_total: number | null; current_year_total: number | null; budget_year_total: number | null;
+  }[];
   page: number;
   page_size: number;
   results: LineItem[];
@@ -180,15 +186,45 @@ export interface ProgramDetail {
   description: { raw_description_text: string; budget_cycle: string } | null;
   sources: SourceRef[];
   cost_elements: CostElementRow[];
+  explanations: Explanation[];
   watched: boolean;
+  watch: { added_by: string | null; created_at: string } | null;
   flag_threshold: number;
+}
+
+export interface Explanation {
+  budget_cycle: string;
+  fiscal_year: number;
+  kind: "change_summary" | "increase_decrease";
+  project: string | null;
+  title: string | null;
+  from_fy: number | null;
+  to_fy: number | null;
+  body: string;
+  page_number: number;
+  link: string;
 }
 
 export const fetchProgram = (key: string, signal?: AbortSignal) =>
   getJson<ProgramDetail>(`/api/programs/${encodeURIComponent(key)}`, signal);
 
+const NAME_KEY = "dbs_name";
+
+/** The name this browser stars programs under (optional; shown on the team watchlist). */
+export function watcherName(): string | null {
+  try { return window.localStorage.getItem(NAME_KEY); } catch { return null; }
+}
+
+export function setWatcherName(name: string): void {
+  try { window.localStorage.setItem(NAME_KEY, name.trim().slice(0, 60)); } catch { /* private window: not remembered */ }
+}
+
 export async function setWatch(key: string, watched: boolean): Promise<boolean> {
-  const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/watch`, { method: watched ? "PUT" : "DELETE" });
+  const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/watch`, {
+    method: watched ? "PUT" : "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: watcherName() || null }),
+  });
   if (resp.status === 401) throw new PrivateError();
   if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
   return ((await resp.json()) as { watched: boolean }).watched;
@@ -200,6 +236,7 @@ export interface DashboardItem {
   latest_title: string;
   exhibit_family: "RDTE" | "PROC";
   created_at: string;
+  added_by: string | null;
   budget_cycle: string | null;
   service_branch: string | null;
   current_year_amount: number | null;
@@ -216,6 +253,7 @@ export interface Dashboard {
   budget_year_total: number;
   current_year_total: number;
   flag_threshold: number;
+  events: { action: "watch" | "unwatch"; actor: string | null; created_at: string; program_key: string; latest_title: string }[];
 }
 
 export const fetchDashboard = (signal?: AbortSignal) => getJson<Dashboard>("/api/dashboard", signal);

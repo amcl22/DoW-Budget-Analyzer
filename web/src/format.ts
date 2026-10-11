@@ -17,6 +17,41 @@ export function fmtMoney(thousands: number | null | undefined): string {
   return `$${millions.format(thousands / 1000)}M`;
 }
 
+/** $K -> "+$12.3M" / "−$1.2B": a signed change. */
+export function fmtChange(thousands: number | null | undefined): string {
+  if (thousands === null || thousands === undefined) return "—";
+  if (thousands === 0) return "$0";
+  return `${thousands > 0 ? "+" : "−"}${fmtMoney(Math.abs(thousands))}`;
+}
+
+/** Below this current-year amount ($K), a percentage change says little: show the $ change. */
+export const SMALL_BASE = 5000;
+
+/** How a line's budget year compares with its current year. */
+export type ChangeKind = "new" | "ending" | "small-base" | "normal" | "none";
+
+export function changeKind(current: number | null, budget: number | null): ChangeKind {
+  const cy = current ?? 0;
+  const by = budget ?? 0;
+  if (cy === 0 && by === 0) return "none";
+  if (cy <= 0 && by > 0) return "new";
+  if (cy > 0 && by === 0) return "ending";
+  if (cy > 0 && cy < SMALL_BASE) return "small-base";
+  return "normal";
+}
+
+/** "Research, Development, Test and Evaluation, Air Force" -> "RDT&E, Air Force". */
+export function shortAccountTitle(title: string | null | undefined): string {
+  if (!title) return "";
+  return title
+    .replace(/Research,? Development,? Test,? (and|&) Evaluation/i, "RDT&E")
+    .replace(/Operation(s)? (and|&) Maintenance/i, "O&M");
+}
+
+export function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export function fmtCount(n: number): string {
   return whole.format(n);
 }
