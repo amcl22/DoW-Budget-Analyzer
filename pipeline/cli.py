@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 import typer
 import yaml
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from .config import (
@@ -263,6 +263,31 @@ def explanations() -> None:
     'Increase/Decrease Statement') for every published R-1 line with a justification page."""
     with Session(get_engine()) as session:
         _refresh_explanations(session)
+
+
+@app.command()
+def issues() -> None:
+    """List open data problem reports from the app."""
+    with get_engine().connect() as conn:
+        rows = conn.execute(text("""
+            SELECT i.id, i.created_at, coalesce(i.reporter, 'anonymous') AS who, p.program_key, i.message
+            FROM data_issue i JOIN program p ON p.id = i.program_id WHERE i.status = 'open' ORDER BY i.id
+        """)).all()
+    if not rows:
+        typer.echo("No open reports.")
+    for r in rows:
+        typer.echo(f"#{r.id}  {r.created_at:%Y-%m-%d}  {r.program_key}  ({r.who})\n     {r.message}")
+
+
+@app.command("resolve-issue")
+def resolve_issue(issue_id: int, note: str = typer.Option(..., help="What was found or fixed")) -> None:
+    """Close a data problem report with a note."""
+    with get_engine().begin() as conn:
+        n = conn.execute(text("""
+            UPDATE data_issue SET status = 'resolved', resolution = :note, resolved_at = now()
+            WHERE id = :id AND status = 'open'
+        """), {"id": issue_id, "note": note}).rowcount
+    typer.echo(f"Resolved #{issue_id}." if n else f"No open report #{issue_id}.")
 
 
 @app.command("discover-books")

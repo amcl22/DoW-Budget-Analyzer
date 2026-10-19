@@ -161,6 +161,7 @@ def program_detail(conn: Connection, key: str) -> dict | None:
         "explanations": _explanations(conn, pid),
         "watched": is_watched(conn, pid),
         "watch": _watch_info(conn, pid),
+        "issues": open_issues(conn, pid),
         "flag_threshold": FLAG_THRESHOLD,
     }
 
@@ -244,4 +245,35 @@ def dashboard(conn: Connection) -> dict:
         "current_year_total": sum(i["current_year_amount"] or 0 for i in items),
         "flag_threshold": FLAG_THRESHOLD,
         "events": watch_events(conn),
+        "issues": open_issues(conn),
     }
+
+
+def report_issue(conn: Connection, program_id: int, message: str, reporter: str | None) -> int:
+    return conn.execute(text("""
+        INSERT INTO data_issue (program_id, reporter, message) VALUES (:pid, :who, :msg) RETURNING id
+    """), {"pid": program_id, "who": reporter, "msg": message}).scalar_one()
+
+
+def open_issues(conn: Connection, program_id: int | None = None) -> list[dict]:
+    """Open data problem reports, newest first (all programs, or one)."""
+    return [dict(r) for r in conn.execute(text("""
+        SELECT i.id, i.reporter, i.message, i.created_at, p.program_key, p.latest_title
+        FROM data_issue i JOIN program p ON p.id = i.program_id
+        WHERE i.status = 'open' AND (CAST(:pid AS bigint) IS NULL OR i.program_id = :pid)
+        ORDER BY i.created_at DESC, i.id DESC
+    """), {"pid": program_id}).mappings()]
+
+
+def data_status(conn: Connection) -> dict:
+    """What's loaded and when: shown on the glossary page and checked by the daily monitor."""
+    releases = [dict(r) for r in conn.execute(text("""
+        SELECT r.budget_cycle, r.exhibit_type, r.finished_at AS loaded_at, r.row_count
+        FROM ingestion_run r WHERE r.status = 'published' ORDER BY r.budget_cycle, r.exhibit_type
+    """)).mappings()]
+    counts = conn.execute(text("""
+        SELECT (SELECT count(*) FROM line_item_flat) AS lines,
+               (SELECT count(*) FROM line_item_explanation) AS explanations,
+               (SELECT count(*) FROM data_issue WHERE status = 'open') AS open_issues
+    """)).mappings().one()
+    return {"releases": releases, **dict(counts)}

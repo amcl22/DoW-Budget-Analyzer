@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchProgram, setWatch, setWatcherName, watcherName, type Explanation, type HistoryRow, type ProgramDetail } from "./api";
+import { fetchProgram, reportIssue, setWatch, setWatcherName, watcherName, type Explanation, type HistoryRow, type ProgramDetail } from "./api";
 import { FundingChart, TYPE_LABEL } from "./FundingChart";
 import { changeKind, fmtChange, fmtCount, fmtDate, fmtM, fmtMoney, fmtPct, SMALL_BASE } from "./format";
 import { AskLink } from "./AskLink";
@@ -129,6 +129,19 @@ export function ProgramPage({ programKey }: { programKey: string }) {
   const isProc = program.exhibit_family === "PROC";
   const description = data.description?.raw_description_text ?? "";
   const longDescription = description.length > 900;
+
+  const report = async () => {
+    const message = window.prompt(
+      "What looks wrong? (e.g. an amount that doesn't match the PDF, a wrong explanation, a missing year)", "");
+    if (!message || message.trim().length < 3) return;
+    try {
+      await reportIssue(program.program_key, message.trim());
+      const fresh = await fetchProgram(program.program_key);
+      setData(fresh);
+    } catch (e) {
+      setError(String(e));
+    }
+  };
 
   const toggleWatch = async () => {
     if (!data.watched && watcherName() === null) {
@@ -300,6 +313,24 @@ export function ProgramPage({ programKey }: { programKey: string }) {
           </div>
         </section>
       )}
+
+      <section className="panel">
+        <h2>Spot a problem?</h2>
+        <p className="muted small">
+          If a figure doesn't match its source page or an explanation looks wrong, report it. Reports go to the data
+          owner, who checks the source and fixes or answers them; open reports show here and on the team watchlist.
+          Until it's resolved, cite the source page, not this app.
+        </p>
+        {data.issues.length > 0 && (
+          <ul className="events">
+            {data.issues.map((i) => (
+              <li key={i.id}><span className="badge ending">Open</span> {i.message}
+                <span className="muted small"> · {i.reporter ?? "anonymous"}, {fmtDate(i.created_at)}</span></li>
+            ))}
+          </ul>
+        )}
+        <button className="linklike" onClick={report}>Report a problem with this data</button>
+      </section>
 
       <section className="panel">
         <h2>Where it appears</h2>

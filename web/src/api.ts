@@ -189,6 +189,7 @@ export interface ProgramDetail {
   explanations: Explanation[];
   watched: boolean;
   watch: { added_by: string | null; created_at: string } | null;
+  issues: DataIssue[];
   flag_threshold: number;
 }
 
@@ -253,6 +254,7 @@ export interface Dashboard {
   budget_year_total: number;
   current_year_total: number;
   flag_threshold: number;
+  issues: DataIssue[];
   events: { action: "watch" | "unwatch"; actor: string | null; created_at: string; program_key: string; latest_title: string }[];
 }
 
@@ -319,3 +321,31 @@ export function askEnabled(): Promise<boolean> {
   askStatus ??= fetchAskStatus().then((s) => s.enabled, () => false);
   return askStatus;
 }
+
+export interface DataIssue {
+  id: number;
+  reporter: string | null;
+  message: string;
+  created_at: string;
+  program_key: string;
+  latest_title: string;
+}
+
+export async function reportIssue(key: string, message: string): Promise<void> {
+  const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/issues`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, name: watcherName() || null }),
+  });
+  if (resp.status === 401) throw new PrivateError();
+  if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+}
+
+export interface DataStatus {
+  releases: { budget_cycle: string; exhibit_type: string; loaded_at: string | null; row_count: number | null }[];
+  lines: number;
+  explanations: number;
+  open_issues: number;
+}
+
+export const fetchStatus = (signal?: AbortSignal) => getJson<DataStatus>("/api/status", signal);

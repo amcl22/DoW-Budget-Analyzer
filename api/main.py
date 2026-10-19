@@ -16,14 +16,15 @@ from typing import Annotated, Literal
 from fastapi import Body, Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
 
 from pipeline.config import database_url
 
 from . import qa
 from .access import LinkAccessMiddleware
-from .programs import dashboard, get_program, program_detail, set_watch, watchlist
+from .programs import (dashboard, data_status, get_program, open_issues, program_detail, report_issue, set_watch,
+                       watchlist)
 from .search import MAX_PAGE_SIZE, SORTS, SearchParams, export_rows, facets, search
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -69,8 +70,35 @@ Params = Annotated[SearchParams, Depends(search_params)]
 
 @app.get("/api/health")
 def health(conn: Conn) -> dict:
-    conn.execute(text("SELECT 1"))
-    return {"ok": True}
+    """Open (no team link needed) for the host and the daily monitor: up, and how much is loaded.
+    Counts only, never data."""
+    s = data_status(conn)
+    return {"ok": True, "releases": len(s["releases"]), "lines": s["lines"], "explanations": s["explanations"]}
+
+
+@app.get("/api/status")
+def status_endpoint(conn: Conn) -> dict:
+    """When each release was loaded, totals, and open problem reports."""
+    return data_status(conn)
+
+
+@app.post("/api/programs/{key}/issues")
+def report_issue_endpoint(conn: Conn, key: str,
+                          message: Annotated[str, Body(min_length=3, max_length=2000)],
+                          name: Annotated[str | None, Body(max_length=60)] = None) -> dict:
+    """Report a problem with a program's figures or explanations; the data owner reviews it."""
+    program = get_program(conn, key)
+    if program is None:
+        raise HTTPException(404, f"no program {key!r}")
+    issue_id = report_issue(conn, program["id"], message.strip(), (name or "").strip() or None)
+    conn.commit()
+    return {"id": issue_id, "status": "open"}
+
+
+@app.get("/api/issues")
+def issues_endpoint(conn: Conn) -> list[dict]:
+    """Open problem reports, newest first."""
+    return open_issues(conn)
 
 
 @app.get("/api/search")
