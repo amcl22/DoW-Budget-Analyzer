@@ -1,5 +1,152 @@
 {
   "seed": 20261019,
+  "run_id": "EVAL-20261019-0053",
+  "trace": [
+    {
+      "step": "e2_totals",
+      "started": "2026-10-19T00:53:59.531290+00:00",
+      "seconds": 0.4
+    },
+    {
+      "step": "e1_lines",
+      "started": "2026-10-19T00:53:59.922755+00:00",
+      "seconds": 1.3
+    },
+    {
+      "step": "e4_outliers",
+      "started": "2026-10-19T00:54:01.203207+00:00",
+      "seconds": 0.1
+    },
+    {
+      "step": "e3_explanations",
+      "started": "2026-10-19T00:54:01.343355+00:00",
+      "seconds": 5.2
+    },
+    {
+      "step": "e6_coverage",
+      "started": "2026-10-19T00:54:06.583963+00:00",
+      "seconds": 0.1
+    },
+    {
+      "step": "e5_search",
+      "started": "2026-10-19T00:54:06.697856+00:00",
+      "seconds": 2.2
+    }
+  ],
+  "e2_totals": {
+    "checks": 12,
+    "match": 12,
+    "rows": [
+      {
+        "release": "PB2024",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2024 Request Amount",
+        "published": 170048790,
+        "database": 170048790,
+        "match": true
+      },
+      {
+        "release": "PB2024",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2024 Request",
+        "published": 144979625,
+        "database": 144979625,
+        "match": true
+      },
+      {
+        "release": "PB2024",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2024 Request",
+        "published": 1937733,
+        "database": 1937733,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2025 Request Amount",
+        "published": 167546268,
+        "database": 167546268,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2025 Request",
+        "published": 143156590,
+        "database": 143156590,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2025 Request",
+        "published": 1729098,
+        "database": 1729098,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2026 Total Amount",
+        "published": 205224237,
+        "database": 205224237,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2026 Total",
+        "published": 179070062,
+        "database": 179070062,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2026 Total",
+        "published": 1187376,
+        "database": 1187376,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of War",
+        "column": "FY 2027 Total Amount",
+        "published": 413095785,
+        "database": 413095785,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2027 Total",
+        "published": 343688921,
+        "database": 343688921,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2027 Total",
+        "published": 1076840,
+        "database": 1076840,
+        "match": true
+      }
+    ]
+  },
   "e1_lines": {
     "sample": 200,
     "pass": 199,
@@ -126,157 +273,6 @@
         "pages": [
           85
         ]
-      }
-    ]
-  },
-  "e2_totals": {
-    "checks": 12,
-    "match": 12,
-    "rows": [
-      {
-        "release": "PB2024",
-        "exhibit": "P-1",
-        "group": "Grand Total Department of Defense",
-        "column": "FY 2024 Request Amount",
-        "published": 170048790,
-        "database": 170048790,
-        "match": true
-      },
-      {
-        "release": "PB2024",
-        "exhibit": "R-1",
-        "group": "Total Research, Development, Test, & Evaluation",
-        "column": "FY 2024 Request",
-        "published": 144979625,
-        "database": 144979625,
-        "match": true
-      },
-      {
-        "release": "PB2024",
-        "exhibit": "R-1",
-        "group": "Total Not in Research, Development, Test, & Evaluation",
-        "column": "FY 2024 Request",
-        "published": 1937733,
-        "database": 1937733,
-        "match": true
-      },
-      {
-        "release": "PB2025",
-        "exhibit": "P-1",
-        "group": "Grand Total Department of Defense",
-        "column": "FY 2025 Request Amount",
-        "published": 167546268,
-        "database": 167546268,
-        "match": true
-      },
-      {
-        "release": "PB2025",
-        "exhibit": "R-1",
-        "group": "Total Research, Development, Test, & Evaluation",
-        "column": "FY 2025 Request",
-        "published": 143156590,
-        "database": 143156590,
-        "match": true
-      },
-      {
-        "release": "PB2025",
-        "exhibit": "R-1",
-        "group": "Total Not in Research, Development, Test, & Evaluation",
-        "column": "FY 2025 Request",
-        "published": 1729098,
-        "database": 1729098,
-        "match": true
-      },
-      {
-        "release": "PB2026",
-        "exhibit": "P-1",
-        "group": "Grand Total Department of Defense",
-        "column": "FY 2026 Total Amount",
-        "published": 205224237,
-        "database": 205224237,
-        "match": true
-      },
-      {
-        "release": "PB2026",
-        "exhibit": "R-1",
-        "group": "Total Research, Development, Test, & Evaluation",
-        "column": "FY 2026 Total",
-        "published": 179070062,
-        "database": 179070062,
-        "match": true
-      },
-      {
-        "release": "PB2026",
-        "exhibit": "R-1",
-        "group": "Total Not in Research, Development, Test, & Evaluation",
-        "column": "FY 2026 Total",
-        "published": 1187376,
-        "database": 1187376,
-        "match": true
-      },
-      {
-        "release": "PB2027",
-        "exhibit": "P-1",
-        "group": "Grand Total Department of War",
-        "column": "FY 2027 Total Amount",
-        "published": 413095785,
-        "database": 413095785,
-        "match": true
-      },
-      {
-        "release": "PB2027",
-        "exhibit": "R-1",
-        "group": "Total Research, Development, Test, & Evaluation",
-        "column": "FY 2027 Total",
-        "published": 343688921,
-        "database": 343688921,
-        "match": true
-      },
-      {
-        "release": "PB2027",
-        "exhibit": "R-1",
-        "group": "Total Not in Research, Development, Test, & Evaluation",
-        "column": "FY 2027 Total",
-        "published": 1076840,
-        "database": 1076840,
-        "match": true
-      }
-    ]
-  },
-  "e3_explanations": {
-    "population": 7887,
-    "sample": 100,
-    "text_on_cited_page": 98,
-    "right_program_section": 100,
-    "found_after_extra_leading_words": 2,
-    "prefixed": [
-      {
-        "id": 17678,
-        "start": "Cyber Operations Infrastructure For FY 2025 and beyond USCYBERCOM changed the project stru"
-      },
-      {
-        "id": 17741,
-        "start": "and Assessment The funding reflects a realignment to the Defense Manpower Data Center (DMD"
-      }
-    ],
-    "failures": [
-      {
-        "id": 18809,
-        "release": "PB2026",
-        "pe": "0300206R",
-        "page": 87,
-        "text_found": false,
-        "pe_on_page": true,
-        "start": "Funding has been reallocated to alternative sources. System"
-      },
-      {
-        "id": 16195,
-        "release": "PB2024",
-        "pe": "0603618D8Z",
-        "page": 298,
-        "text_found": false,
-        "pe_on_page": true,
-        "start": "FY 2024 minimal decrease due to programmatic adjustments. Innovation"
       }
     ]
   },
@@ -1094,6 +1090,43 @@
       }
     ]
   },
+  "e3_explanations": {
+    "population": 7887,
+    "sample": 100,
+    "text_on_cited_page": 98,
+    "right_program_section": 100,
+    "found_after_extra_leading_words": 2,
+    "prefixed": [
+      {
+        "id": 17678,
+        "start": "Cyber Operations Infrastructure For FY 2025 and beyond USCYBERCOM changed the project stru"
+      },
+      {
+        "id": 17741,
+        "start": "and Assessment The funding reflects a realignment to the Defense Manpower Data Center (DMD"
+      }
+    ],
+    "failures": [
+      {
+        "id": 18809,
+        "release": "PB2026",
+        "pe": "0300206R",
+        "page": 87,
+        "text_found": false,
+        "pe_on_page": true,
+        "start": "Funding has been reallocated to alternative sources. System"
+      },
+      {
+        "id": 16195,
+        "release": "PB2024",
+        "pe": "0603618D8Z",
+        "page": 298,
+        "text_found": false,
+        "pe_on_page": true,
+        "start": "FY 2024 minimal decrease due to programmatic adjustments. Innovation"
+      }
+    ]
+  },
   "e6_coverage": {
     "rows": [
       {
@@ -1422,127 +1455,127 @@
     "queries": 17,
     "top1": 13,
     "top5": 14,
-    "median_ms": 82,
-    "max_ms": 124,
+    "median_ms": 91,
+    "max_ms": 286,
     "rows": [
       {
         "query": "conventional prompt strike",
         "expected": "prompt strike",
         "rank": 1,
         "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
-        "ms": 112
+        "ms": 286
       },
       {
         "query": "counterspace",
         "expected": "counterspace",
         "rank": 1,
         "top_result": "Counterspace Systems",
-        "ms": 78
+        "ms": 99
       },
       {
         "query": "F-35",
         "expected": "F-35",
         "rank": 1,
         "top_result": "F-35 C2D2",
-        "ms": 76
+        "ms": 86
       },
       {
         "query": "B-21",
         "expected": "B-21",
         "rank": 1,
         "top_result": "B-21 Raider",
-        "ms": 74
+        "ms": 80
       },
       {
         "query": "Columbia submarine",
         "expected": "COLUMBIA Class",
         "rank": 1,
         "top_result": "COLUMBIA Class Submarine",
-        "ms": 81
+        "ms": 104
       },
       {
         "query": "collaborative combat aircraft",
         "expected": "Collaborative Combat Aircraft",
         "rank": 1,
         "top_result": "Collaborative Combat Aircraft",
-        "ms": 87
+        "ms": 107
       },
       {
         "query": "golden dome",
         "expected": "Golden Dome",
         "rank": 1,
         "top_result": "Golden Dome for America - Space Programs",
-        "ms": 82
+        "ms": 86
       },
       {
         "query": "hypersonic attack cruise missile",
         "expected": "Hypersonic Attack Cruise",
         "rank": 1,
         "top_result": "Hypersonics Prototyping - Hypersonic Attack Cruise Missile (HACM)",
-        "ms": 96
+        "ms": 105
       },
       {
         "query": "AMRAAM",
         "expected": "AMRAAM",
         "rank": 1,
         "top_result": "Advanced Medium Range Air-to-Air Missile (AMRAAM)",
-        "ms": 82
+        "ms": 78
       },
       {
         "query": "DDG-51 destroyer",
         "expected": "DDG-51",
         "rank": null,
         "top_result": "Ship Preliminary Design & Feasibility Studies",
-        "ms": 82
+        "ms": 85
       },
       {
         "query": "0605518N",
         "expected": "PROMPT STRIKE",
         "rank": 1,
         "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
-        "ms": 77
+        "ms": 83
       },
       {
         "query": "narrowband satellite communications",
         "expected": "Narrowband Satellite",
         "rank": 1,
         "top_result": "Narrowband Satellite Communications",
-        "ms": 94
+        "ms": 96
       },
       {
         "query": "javelin missile",
         "expected": "Javelin",
         "rank": 1,
         "top_result": "Anti-Armor Missile-Javelin",
-        "ms": 81
+        "ms": 83
       },
       {
         "query": "aegis missile defense",
         "expected": "Aegis",
         "rank": 2,
         "top_result": "Ballistic Missile Defense Command and Control, Battle Management and Communications (C2BMC)",
-        "ms": 124
+        "ms": 88
       },
       {
         "query": "artificial intelligence army",
         "expected": "Artificial Intelligence",
         "rank": null,
         "top_result": "Software Engineering Institute",
-        "ms": 105
+        "ms": 91
       },
       {
         "query": "E-7 wedgetail",
         "expected": "^E-7$",
         "rank": null,
         "top_result": null,
-        "ms": 78
+        "ms": 104
       },
       {
         "query": "next generation fighter",
         "expected": "F-47|Next Generation (Air Dominance|Fighter)",
         "rank": 1,
         "top_result": "Next Generation Fighter",
-        "ms": 100
+        "ms": 95
       }
     ]
   }
