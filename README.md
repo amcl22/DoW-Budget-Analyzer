@@ -129,6 +129,24 @@ star and unstar with who made it (`watch_event`). `GET /api/dashboard` returns t
 - `/glossary` explains the acronyms, how to read the numbers, and what isn't covered (O&M,
   military personnel, construction, Army/Air Force/Space Force R-2s, P-40s).
 
+## Operations: problem reports, status, monitoring
+
+- **Report a problem** on any program page records a data problem report (`data_issue`).
+  Open reports show on that page and on the watchlist. The data owner reviews them with
+  `budget issues` and closes them with `budget resolve-issue ID --note "..."`.
+- `GET /api/status` (behind the team link) lists when each release was loaded, plus totals and
+  open reports. The glossary page shows the same as "Data as of". `GET /api/health` is open and
+  returns counts only.
+- `.github/workflows/monitor.yml` runs daily. It checks that the site is up, has all 8
+  releases, 8,000+ lines and 7,000+ explanations, and still refuses visitors without the team
+  link. A failed run emails the repository owner.
+
+## Evaluation
+
+`python scripts/evaluate.py` checks the data against the stored source PDFs (seeded samples)
+and writes `docs/eval/results.md` and `results.json`: line accuracy, totals, explanation
+fidelity, outliers, search and coverage.
+
 ## Ask a question (Q&A)
 
 `/ask` answers plain-English questions from the database, using Claude (`api/qa.py`). Claude

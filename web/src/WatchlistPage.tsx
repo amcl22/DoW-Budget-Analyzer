@@ -122,6 +122,22 @@ export function WatchlistPage() {
         </>
       )}
 
+      {data && data.issues.length > 0 && (
+        <section className="panel" style={{ marginTop: 16 }}>
+          <h2>Open data problem reports</h2>
+          <p className="muted small">Reported from program pages; the data owner checks each against the source and resolves it.</p>
+          <ul className="events">
+            {data.issues.map((i) => (
+              <li key={i.id}>
+                <span className="muted">{fmtDate(i.created_at)}</span>{" "}
+                <Link href={programPath(i.program_key)}>{i.latest_title}</Link>: {i.message}
+                <span className="muted"> ({i.reporter ?? "anonymous"})</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {data && data.events.length > 0 && (
         <section className="panel" id="history" style={{ marginTop: 16 }}>
           <h2>Recent changes</h2>

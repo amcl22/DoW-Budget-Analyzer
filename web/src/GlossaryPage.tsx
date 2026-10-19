@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { fetchStatus, type DataStatus } from "./api";
+import { fmtCount, fmtDate } from "./format";
 import { Link } from "./router";
 import { lastSearchUrl } from "./SearchPage";
 
@@ -36,6 +38,8 @@ const READING: [string, string][] = [
 ];
 
 export function GlossaryPage() {
+  const [status, setStatus] = useState<DataStatus | null>(null);
+  useEffect(() => { fetchStatus().then(setStatus).catch(() => setStatus(null)); }, []);
   useEffect(() => {
     document.title = "Glossary & coverage · DoW Budget Search";
     return () => { document.title = "DoW Budget Search"; };
@@ -44,6 +48,14 @@ export function GlossaryPage() {
     <div className="app glossary-page">
       <Link className="back" href={lastSearchUrl()}>← Back to search</Link>
       <h1>Glossary &amp; coverage</h1>
+      {status && (
+        <p className="muted small">
+          Data as of {fmtDate(status.releases.map((r) => r.loaded_at ?? "").sort().slice(-1)[0] || new Date().toISOString())}:
+          {" "}{status.releases.length} published exhibit releases, {fmtCount(status.lines)} line items,
+          {" "}{fmtCount(status.explanations)} official explanations
+          {status.open_issues > 0 ? `, ${status.open_issues} open problem report${status.open_issues > 1 ? "s" : ""}` : ""}.
+        </p>
+      )}
 
       <section className="panel">
         <h2>What's in the data</h2>

@@ -270,3 +270,19 @@ def test_watch_records_who_and_logs_every_change(client):
     assert client.put(f"/api/programs/{key}/watch", json={"name": "x" * 61}).status_code == 422
     client.delete(f"/api/programs/{key}/watch")
     assert "explanations" in detail and detail["explanations"] == []
+
+
+def test_problem_reports_status_and_health(client):
+    key = "0601102A"
+    assert client.post(f"/api/programs/{key}/issues", json={"message": "x"}).status_code == 422   # too short
+    r = client.post(f"/api/programs/{key}/issues", json={"message": "FY2026 amount looks off", "name": "Pat"})
+    assert r.status_code == 200 and r.json()["status"] == "open"
+    assert client.post("/api/programs/nope/issues", json={"message": "hello"}).status_code == 404
+    [issue] = client.get("/api/issues").json()
+    assert (issue["program_key"], issue["reporter"], issue["message"]) == (key, "Pat", "FY2026 amount looks off")
+    assert client.get(f"/api/programs/{key}").json()["issues"][0]["id"] == issue["id"]
+    assert client.get("/api/dashboard").json()["issues"][0]["id"] == issue["id"]
+    s = client.get("/api/status").json()
+    assert s["lines"] == 59 and s["open_issues"] == 1 and len(s["releases"]) == 2
+    h = client.get("/api/health").json()
+    assert h == {"ok": True, "releases": 2, "lines": 59, "explanations": 0}

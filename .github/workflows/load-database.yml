@@ -1,7 +1,7 @@
 # Loads the budget data into the hosted database (the DATABASE_URL repository secret) from the
 # snapshot in deploy/data/dow-budget.dump. Run it from the Actions tab: "Load database" >
 # "Run workflow". Safe to re-run: it replaces the budget data and keeps the team watchlist
-# (stars, names and history) that is already there.
+# (stars, names and history) and data problem reports that are already there.
 name: Load database
 
 on:
@@ -13,7 +13,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check the secret is set
         run: |
           [ -n "$DATABASE_URL" ] || { echo "::error::Add the DATABASE_URL repository secret first"; exit 1; }
@@ -25,6 +25,7 @@ jobs:
           # absent on a first load, or before the watchlist history existed: nothing to keep
           psql "$url" -c "\copy (SELECT p.program_key, w.created_at, to_jsonb(w)->>'added_by' FROM program_watch w JOIN program p ON p.id = w.program_id WHERE w.user_id IS NULL) TO '$RUNNER_TEMP/watch.csv' CSV" || true
           psql "$url" -c "\copy (SELECT p.program_key, e.action, e.actor, e.created_at FROM watch_event e JOIN program p ON p.id = e.program_id) TO '$RUNNER_TEMP/events.csv' CSV" || true
+          psql "$url" -c "\copy (SELECT p.program_key, i.reporter, i.message, i.status, i.resolution, i.created_at, i.resolved_at FROM data_issue i JOIN program p ON p.id = i.program_id) TO '$RUNNER_TEMP/issues.csv' CSV" || true
           wc -l "$RUNNER_TEMP"/*.csv 2>/dev/null || echo "no watchlist yet"
       - name: Restore the snapshot
         run: |
@@ -33,12 +34,15 @@ jobs:
       - name: Put the team watchlist back
         run: |
           url="${DATABASE_URL/postgresql+psycopg:\/\//postgresql://}"
-          touch "$RUNNER_TEMP/watch.csv" "$RUNNER_TEMP/events.csv"
+          touch "$RUNNER_TEMP/watch.csv" "$RUNNER_TEMP/events.csv" "$RUNNER_TEMP/issues.csv"
           psql "$url" -v ON_ERROR_STOP=1 <<SQL
           CREATE TEMP TABLE saved_watch (program_key text, created_at timestamptz, added_by text);
           CREATE TEMP TABLE saved_event (program_key text, action text, actor text, created_at timestamptz);
+          CREATE TEMP TABLE saved_issue (program_key text, reporter text, message text, status text, resolution text,
+                                         created_at timestamptz, resolved_at timestamptz);
           \copy saved_watch FROM '$RUNNER_TEMP/watch.csv' CSV
           \copy saved_event FROM '$RUNNER_TEMP/events.csv' CSV
+          \copy saved_issue FROM '$RUNNER_TEMP/issues.csv' CSV
           INSERT INTO program_watch (program_id, user_id, added_by, created_at)
             SELECT DISTINCT ON (p.id) p.id, NULL, s.added_by, s.created_at
             FROM saved_watch s JOIN program p ON p.program_key = s.program_key
@@ -46,6 +50,10 @@ jobs:
           INSERT INTO watch_event (program_id, action, actor, created_at)
             SELECT DISTINCT ON (s.program_key, s.action, s.created_at) p.id, s.action, s.actor, s.created_at
             FROM saved_event s JOIN program p ON p.program_key = s.program_key;
+          INSERT INTO data_issue (program_id, reporter, message, status, resolution, created_at, resolved_at)
+            SELECT DISTINCT ON (s.program_key, s.created_at, s.message) p.id, s.reporter, s.message, s.status,
+                   s.resolution, s.created_at, s.resolved_at
+            FROM saved_issue s JOIN program p ON p.program_key = s.program_key;
           SQL
       - name: Check
         run: |

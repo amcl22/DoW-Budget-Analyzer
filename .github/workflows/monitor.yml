@@ -1,0 +1,36 @@
+# Daily check that the live app is up and its data is all there. A failed run emails the
+# repository owner (GitHub's default for failed scheduled workflows); see "Operational design".
+name: Monitor
+
+on:
+  schedule:
+    - cron: "17 13 * * *"     # daily, 13:17 UTC (morning US Eastern)
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    env:
+      SITE_URL: ${{ vars.SITE_URL || 'https://dow-budget-search.onrender.com' }}
+    steps:
+      - name: Health and data counts
+        run: |
+          # the free host may be asleep: allow up to 3 minutes to wake
+          body=$(curl -fsS --retry 6 --retry-delay 20 --retry-all-errors -m 60 "$SITE_URL/api/health")
+          echo "$body"
+          python3 - "$body" <<'PY'
+          import json, sys
+          h = json.loads(sys.argv[1])
+          problems = []
+          if not h.get("ok"): problems.append("health not ok")
+          if h.get("releases", 0) < 8: problems.append(f"only {h.get('releases')} published releases (expected 8)")
+          if h.get("lines", 0) < 8000: problems.append(f"only {h.get('lines')} line items (expected about 8,314)")
+          if h.get("explanations", 0) < 7000: problems.append(f"only {h.get('explanations')} explanations (expected about 7,887)")
+          for p in problems: print(f"::error::{p}")
+          sys.exit(1 if problems else 0)
+          PY
+      - name: The site is still private
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" -m 60 "$SITE_URL/")
+          echo "home page without the team link: HTTP $code"
+          [ "$code" = "401" ] || { echo "::error::expected 401 without the team link, got $code"; exit 1; }

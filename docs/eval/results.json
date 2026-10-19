@@ -1,0 +1,1549 @@
+{
+  "seed": 20261019,
+  "e1_lines": {
+    "sample": 200,
+    "pass": 199,
+    "pass_rate": 0.995,
+    "amounts_checked": 513,
+    "amounts_ok": 512,
+    "amounts_derived": 4,
+    "by_stratum": {
+      "PB2024 P-1": {
+        "derived_amounts": 3,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "current_year_amount_checked": 18,
+        "current_year_amount_ok": 18,
+        "budget_year_amount_checked": 22,
+        "budget_year_amount_ok": 22,
+        "prior_year_amount_checked": 20,
+        "prior_year_amount_ok": 20
+      },
+      "PB2024 R-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 22,
+        "prior_year_amount_ok": 22,
+        "current_year_amount_checked": 23,
+        "current_year_amount_ok": 23,
+        "budget_year_amount_checked": 21,
+        "budget_year_amount_ok": 21
+      },
+      "PB2025 P-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 20,
+        "prior_year_amount_ok": 20,
+        "current_year_amount_checked": 22,
+        "current_year_amount_ok": 22,
+        "budget_year_amount_checked": 21,
+        "budget_year_amount_ok": 21
+      },
+      "PB2025 R-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 24,
+        "prior_year_amount_ok": 24,
+        "current_year_amount_checked": 22,
+        "current_year_amount_ok": 22,
+        "budget_year_amount_checked": 20,
+        "budget_year_amount_ok": 20
+      },
+      "PB2026 P-1": {
+        "derived_amounts": 1,
+        "lines": 25,
+        "pass": 24,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 23,
+        "prior_year_amount_ok": 23,
+        "current_year_amount_checked": 20,
+        "current_year_amount_ok": 19,
+        "budget_year_amount_checked": 18,
+        "budget_year_amount_ok": 18
+      },
+      "PB2026 R-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "budget_year_amount_checked": 21,
+        "budget_year_amount_ok": 21,
+        "prior_year_amount_checked": 24,
+        "prior_year_amount_ok": 24,
+        "current_year_amount_checked": 24,
+        "current_year_amount_ok": 24
+      },
+      "PB2027 P-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 21,
+        "prior_year_amount_ok": 21,
+        "current_year_amount_checked": 19,
+        "current_year_amount_ok": 19,
+        "budget_year_amount_checked": 22,
+        "budget_year_amount_ok": 22
+      },
+      "PB2027 R-1": {
+        "derived_amounts": 0,
+        "lines": 25,
+        "pass": 25,
+        "identifier_checked": 25,
+        "identifier_ok": 25,
+        "prior_year_amount_checked": 24,
+        "prior_year_amount_ok": 24,
+        "current_year_amount_checked": 21,
+        "current_year_amount_ok": 21,
+        "budget_year_amount_checked": 21,
+        "budget_year_amount_ok": 21
+      }
+    },
+    "failures": [
+      {
+        "id": 20859,
+        "release": "PB2026",
+        "exhibit": "P-1",
+        "number": "5112",
+        "title": "Ship to Shore Connector",
+        "failed": [
+          "current_year_amount"
+        ],
+        "pages": [
+          85
+        ]
+      }
+    ]
+  },
+  "e2_totals": {
+    "checks": 12,
+    "match": 12,
+    "rows": [
+      {
+        "release": "PB2024",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2024 Request Amount",
+        "published": 170048790,
+        "database": 170048790,
+        "match": true
+      },
+      {
+        "release": "PB2024",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2024 Request",
+        "published": 144979625,
+        "database": 144979625,
+        "match": true
+      },
+      {
+        "release": "PB2024",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2024 Request",
+        "published": 1937733,
+        "database": 1937733,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2025 Request Amount",
+        "published": 167546268,
+        "database": 167546268,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2025 Request",
+        "published": 143156590,
+        "database": 143156590,
+        "match": true
+      },
+      {
+        "release": "PB2025",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2025 Request",
+        "published": 1729098,
+        "database": 1729098,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of Defense",
+        "column": "FY 2026 Total Amount",
+        "published": 205224237,
+        "database": 205224237,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2026 Total",
+        "published": 179070062,
+        "database": 179070062,
+        "match": true
+      },
+      {
+        "release": "PB2026",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2026 Total",
+        "published": 1187376,
+        "database": 1187376,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "P-1",
+        "group": "Grand Total Department of War",
+        "column": "FY 2027 Total Amount",
+        "published": 413095785,
+        "database": 413095785,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "R-1",
+        "group": "Total Research, Development, Test, & Evaluation",
+        "column": "FY 2027 Total",
+        "published": 343688921,
+        "database": 343688921,
+        "match": true
+      },
+      {
+        "release": "PB2027",
+        "exhibit": "R-1",
+        "group": "Total Not in Research, Development, Test, & Evaluation",
+        "column": "FY 2027 Total",
+        "published": 1076840,
+        "database": 1076840,
+        "match": true
+      }
+    ]
+  },
+  "e3_explanations": {
+    "population": 7887,
+    "sample": 100,
+    "text_on_cited_page": 98,
+    "right_program_section": 100,
+    "found_after_extra_leading_words": 2,
+    "prefixed": [
+      {
+        "id": 17678,
+        "start": "Cyber Operations Infrastructure For FY 2025 and beyond USCYBERCOM changed the project stru"
+      },
+      {
+        "id": 17741,
+        "start": "and Assessment The funding reflects a realignment to the Defense Manpower Data Center (DMD"
+      }
+    ],
+    "failures": [
+      {
+        "id": 18809,
+        "release": "PB2026",
+        "pe": "0300206R",
+        "page": 87,
+        "text_found": false,
+        "pe_on_page": true,
+        "start": "Funding has been reallocated to alternative sources. System"
+      },
+      {
+        "id": 16195,
+        "release": "PB2024",
+        "pe": "0603618D8Z",
+        "page": 298,
+        "text_found": false,
+        "pe_on_page": true,
+        "start": "FY 2024 minimal decrease due to programmatic adjustments. Innovation"
+      }
+    ]
+  },
+  "e4_outliers": {
+    "lines": 101,
+    "confirmed": 101,
+    "rows": [
+      {
+        "number": "0604539D8Z",
+        "title": "Defense Autonomous Warfare Group",
+        "exhibit": "R-1",
+        "current": 225900,
+        "budget": 54599650,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "30",
+        "title": "Major Equipment, OSD",
+        "exhibit": "P-1",
+        "current": 2117914,
+        "budget": 30713031,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "TITLE3",
+        "title": "Defense Production Act Purchases",
+        "exhibit": "P-1",
+        "current": 1321923,
+        "budget": 30431425,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "OSCLOANS",
+        "title": "Office of Strategic Capital Loan Program",
+        "exhibit": "P-1",
+        "current": 1447770,
+        "budget": 20216000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "8260C53101",
+        "title": "MSE Missile",
+        "exhibit": "P-1",
+        "current": 1645905,
+        "budget": 12229447,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "8046C20200",
+        "title": "TERMINAL HIGH ALTITUDE AREA DEFENSE (THAAD)",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 11435205,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "AMTI00",
+        "title": "Space Based Air Moving Target Indicator",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 7056000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5010",
+        "title": "As Submarine Tender",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 4444000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0193",
+        "title": "P-8A Poseidon",
+        "exhibit": "P-1",
+        "current": 13631,
+        "budget": 4227350,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "MD14",
+        "title": "SM-3 IIAs",
+        "exhibit": "P-1",
+        "current": 509835,
+        "budget": 4218604,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "21",
+        "title": "Sovereign Artificial Intelligence (AI) Infrastructure",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 4200000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "3041",
+        "title": "LHA Replacement",
+        "exhibit": "P-1",
+        "current": 93603,
+        "budget": 3852319,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2101",
+        "title": "Tomahawk",
+        "exhibit": "P-1",
+        "current": 257614,
+        "budget": 3008909,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "9214C81200",
+        "title": "MID-RANGE CAPABILITY (MRC)",
+        "exhibit": "P-1",
+        "current": 82407,
+        "budget": 2701633,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5300",
+        "title": "Completion of PY Shipbuilding Programs",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 2611990,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604791D8Z",
+        "title": "Multi-Domain Joint Operations (MDJO)",
+        "exhibit": "R-1",
+        "current": 3310,
+        "budget": 2432001,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "3010",
+        "title": "LPD Flight II",
+        "exhibit": "P-1",
+        "current": 345567,
+        "budget": 2192700,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604545N",
+        "title": "Advanced Ship Building Industrial Base and Future Ship Experimental",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 1850000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1206855SF",
+        "title": "Evolved Strategic SATCOM (ESS)",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 1838718,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2247",
+        "title": "MSE Missile",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 1730823,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1996B11500",
+        "title": "C2 TRANSPORT",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 1581863,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "PLEO00",
+        "title": "Proliferated Low Earth Orbit SATCOM",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 1561600,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1207440SF",
+        "title": "Automate Sat C2",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 1524300,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1203636SF",
+        "title": "Space Data Network",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 1485397,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1992B11400",
+        "title": "C2 INFRASTRUCTURE",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 1293203,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2421",
+        "title": "Industrial Preparedness",
+        "exhibit": "P-1",
+        "current": 190000,
+        "budget": 1154647,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605058A",
+        "title": "Terminal High Altitude Area Defense (THAAD) RDTE",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 1053983,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "GMTI00",
+        "title": "Ground Moving Target Indicator (GMTI)",
+        "exhibit": "P-1",
+        "current": 154500,
+        "budget": 1016612,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2056",
+        "title": "BBG(X)",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 1000000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "CCA000",
+        "title": "Collaborative Combat Aircraft",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 996528,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603375D8Z",
+        "title": "Technology Innovation",
+        "exhibit": "R-1",
+        "current": 19460,
+        "budget": 982694,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604139D8Z",
+        "title": "Golden Dome for America - MDA",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 893000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2206",
+        "title": "AMRAAM",
+        "exhibit": "P-1",
+        "current": 69913,
+        "budget": 804285,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1160",
+        "title": "Conventional Prompt Strike",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 750387,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "6200C02901",
+        "title": "High Mobility Artillery Rocket System (HIMARS",
+        "exhibit": "P-1",
+        "current": 61503,
+        "budget": 745682,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604854A",
+        "title": "Artillery Systems - EMD",
+        "exhibit": "R-1",
+        "current": 76767,
+        "budget": 709192,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603662D8Z",
+        "title": "Networked Communications Capabilities",
+        "exhibit": "R-1",
+        "current": 84658,
+        "budget": 696297,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605649D8Z",
+        "title": "Acquisition Integration and Interoperability (AI2)",
+        "exhibit": "R-1",
+        "current": 13365,
+        "budget": 668557,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5123",
+        "title": "T-AH(X)",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 650000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5530",
+        "title": "Anti-Ship Missile Decoy System",
+        "exhibit": "P-1",
+        "current": 50741,
+        "budget": 606241,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604538D8Z",
+        "title": "Economic Defense Unit (EDU)",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 593281,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0205401JCA",
+        "title": "Counter - Small Unmanned Aircraft Systems (JIATF-401)",
+        "exhibit": "R-1",
+        "current": 6500,
+        "budget": 580348,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0195",
+        "title": "E-2D Adv Hawkeye",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 550000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "7241G86000",
+        "title": "XM30 MECHANIZED INFANTRY COMBAT VEHICLE (MICV",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 546990,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0207255N",
+        "title": "MQ-25 Stingray",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 513308,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604797D8Z",
+        "title": "Joint Energetic Transition Office",
+        "exhibit": "R-1",
+        "current": 3986,
+        "budget": 506278,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605331A",
+        "title": "C2 Applications",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 488401,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603180C",
+        "title": "Advanced Research",
+        "exhibit": "R-1",
+        "current": 76628,
+        "budget": 482573,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603000D8Z",
+        "title": "Joint Munitions Advanced Technology",
+        "exhibit": "R-1",
+        "current": 45325,
+        "budget": 479251,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "CTRSPC",
+        "title": "Counterspace Systems",
+        "exhibit": "P-1",
+        "current": 2027,
+        "budget": 459466,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5118",
+        "title": "Bulk Fuel Vessel",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 450000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "4631",
+        "title": "Command Post Systems",
+        "exhibit": "P-1",
+        "current": 43174,
+        "budget": 442308,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "827000",
+        "title": "Mission Support Vehicles",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 439892,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "HACM00",
+        "title": "Hypersonic Attack Cruise Missile",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 403974,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "9997K81500",
+        "title": "ADVANCED SITUATIONAL AWARENESS SYSTEMS",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 397286,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0305240F",
+        "title": "ISR Transport and Processing",
+        "exhibit": "R-1",
+        "current": 32578,
+        "budget": 312037,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605332A",
+        "title": "C2 Data",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 306019,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605027D8Z",
+        "title": "OUSD(C) IT Development Initiatives",
+        "exhibit": "R-1",
+        "current": 23627,
+        "budget": 273253,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5128",
+        "title": "Fireboats",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 272500,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1206617SF",
+        "title": "Operational Test & Training Infrastructure",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 265215,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "4757",
+        "title": "Unmanned Air Systems (Intel)",
+        "exhibit": "P-1",
+        "current": 19991,
+        "budget": 262815,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604270F",
+        "title": "Electronic Warfare Development",
+        "exhibit": "R-1",
+        "current": 18971,
+        "budget": 260233,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "9697A12400",
+        "title": "HADES PLATFORM, PAYLOADS/PED, AND INTEGRATION",
+        "exhibit": "P-1",
+        "current": 26850,
+        "budget": 227569,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1612",
+        "title": "Large UUV",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 222998,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "C03700",
+        "title": "C-37A",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 208000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0465",
+        "title": "Other Support Aircraft",
+        "exhibit": "P-1",
+        "current": 19812,
+        "budget": 204476,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5018",
+        "title": "SMS-Special Mission Ship",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 200000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0102417F",
+        "title": "Over-the-Horizon Backscatter Radar",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 173975,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0608648D8Z",
+        "title": "Acquisition Visibility - Software Pilot Program",
+        "exhibit": "R-1",
+        "current": 17301,
+        "budget": 173540,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1203156SF",
+        "title": "Data Transport and Networking",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 164974,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603135A",
+        "title": "Counter Small Unmanned Aerial Systems (C-SUAS) Advanced Technology",
+        "exhibit": "R-1",
+        "current": 7773,
+        "budget": 156520,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "CCA000",
+        "title": "Collaborative Combat Aircraft",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 150500,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "ESS000",
+        "title": "Evolved Strategic SATCOM (ESS)",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 139700,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "5132",
+        "title": "Trailers",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 136438,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1613",
+        "title": "Extra Large UUV",
+        "exhibit": "P-1",
+        "current": 3313,
+        "budget": 135802,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "6761A12000",
+        "title": "Future Vertical Lift Family of Systems",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 127217,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0452",
+        "title": "Marine Group 5 UAS",
+        "exhibit": "P-1",
+        "current": 15162,
+        "budget": 118600,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1203165SF",
+        "title": "NAVSTAR Global Positioning System (Space and Control Segments)",
+        "exhibit": "R-1",
+        "current": null,
+        "budget": 115000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "3264AA0252",
+        "title": "CH-47 Cargo Helicopter Mods (MYP)",
+        "exhibit": "P-1",
+        "current": 17709,
+        "budget": 108408,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "351010",
+        "title": "Rockets",
+        "exhibit": "P-1",
+        "current": null,
+        "budget": 102059,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604602F",
+        "title": "Armament/Ordnance Development",
+        "exhibit": "R-1",
+        "current": 7174,
+        "budget": 96762,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0603925N",
+        "title": "Directed Energy and Electric Weapon Systems",
+        "exhibit": "R-1",
+        "current": 14480,
+        "budget": 94825,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "1208053SF",
+        "title": "Joint Tactical Ground System",
+        "exhibit": "R-1",
+        "current": 6698,
+        "budget": 92731,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "500",
+        "title": "Personnel Administration",
+        "exhibit": "P-1",
+        "current": 3797,
+        "budget": 82438,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "4367",
+        "title": "Electro Magnetic Spectrum Operations (EMSO)",
+        "exhibit": "P-1",
+        "current": 3631,
+        "budget": 79269,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0207NSAV",
+        "title": "Non-Standard Aviation",
+        "exhibit": "P-1",
+        "current": 7849,
+        "budget": 72650,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2038",
+        "title": "LAV PIP",
+        "exhibit": "P-1",
+        "current": 764,
+        "budget": 68825,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604115C",
+        "title": "Technology Maturation Initiatives",
+        "exhibit": "R-1",
+        "current": 5000,
+        "budget": 59700,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0101318F",
+        "title": "Service Support to STRATCOM - Global Strike",
+        "exhibit": "R-1",
+        "current": 6833,
+        "budget": 56203,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604129A",
+        "title": "Advanced Power Applications",
+        "exhibit": "R-1",
+        "current": 5000,
+        "budget": 48000,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604924D8Z",
+        "title": "High Energy Laser Advanced Component Development & Prototype",
+        "exhibit": "R-1",
+        "current": 5528,
+        "budget": 44485,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0305232M",
+        "title": "RQ-11 UAV",
+        "exhibit": "R-1",
+        "current": 1063,
+        "budget": 19842,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0604679D8Z",
+        "title": "Office of Strategic Capital (OSC)",
+        "exhibit": "R-1",
+        "current": 2000,
+        "budget": 18955,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0944",
+        "title": "LCS Class Support Equipment",
+        "exhibit": "P-1",
+        "current": 2551,
+        "budget": 15815,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "GNRLIT",
+        "title": "General Information Tech - Space",
+        "exhibit": "P-1",
+        "current": 1835,
+        "budget": 14895,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0605013BL",
+        "title": "Information Technology Development",
+        "exhibit": "R-1",
+        "current": 1192,
+        "budget": 13620,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "861350",
+        "title": "Spares and Repair Parts (Cyber)",
+        "exhibit": "P-1",
+        "current": 1075,
+        "budget": 8657,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0208288F",
+        "title": "Intel Data Applications",
+        "exhibit": "R-1",
+        "current": 1012,
+        "budget": 7511,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "0602891D8Z",
+        "title": "FSRM Modelling",
+        "exhibit": "R-1",
+        "current": 994,
+        "budget": 6635,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "2185",
+        "title": "155mm Lightweight Towed Howitzer",
+        "exhibit": "P-1",
+        "current": 3,
+        "budget": 5709,
+        "confirmed_on_page": true
+      },
+      {
+        "number": "3016",
+        "title": "Family Anti-Armor Weapon Systems (FOAAWS)",
+        "exhibit": "P-1",
+        "current": 107,
+        "budget": 808,
+        "confirmed_on_page": true
+      }
+    ]
+  },
+  "e6_coverage": {
+    "rows": [
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "P-1",
+        "service_branch": "Air Force",
+        "lines": 197,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "P-1",
+        "service_branch": "Army",
+        "lines": 288,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "P-1",
+        "service_branch": "Defense-Wide",
+        "lines": 75,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "P-1",
+        "service_branch": "Navy",
+        "lines": 363,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "P-1",
+        "service_branch": "Space Force",
+        "lines": 26,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "R-1",
+        "service_branch": "Air Force",
+        "lines": 263,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "R-1",
+        "service_branch": "Army",
+        "lines": 225,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "R-1",
+        "service_branch": "Defense-Wide",
+        "lines": 272,
+        "with_justification": 261,
+        "with_explanation": 258
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "R-1",
+        "service_branch": "Navy",
+        "lines": 248,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2024",
+        "exhibit_type": "R-1",
+        "service_branch": "Space Force",
+        "lines": 75,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "P-1",
+        "service_branch": "Air Force",
+        "lines": 201,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "P-1",
+        "service_branch": "Army",
+        "lines": 286,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "P-1",
+        "service_branch": "Defense-Wide",
+        "lines": 77,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "P-1",
+        "service_branch": "Navy",
+        "lines": 381,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "P-1",
+        "service_branch": "Space Force",
+        "lines": 29,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "R-1",
+        "service_branch": "Air Force",
+        "lines": 276,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "R-1",
+        "service_branch": "Army",
+        "lines": 226,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "R-1",
+        "service_branch": "Defense-Wide",
+        "lines": 290,
+        "with_justification": 265,
+        "with_explanation": 258
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "R-1",
+        "service_branch": "Navy",
+        "lines": 255,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2025",
+        "exhibit_type": "R-1",
+        "service_branch": "Space Force",
+        "lines": 75,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "P-1",
+        "service_branch": "Air Force",
+        "lines": 198,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "P-1",
+        "service_branch": "Army",
+        "lines": 282,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "P-1",
+        "service_branch": "Defense-Wide",
+        "lines": 77,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "P-1",
+        "service_branch": "Navy",
+        "lines": 362,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "P-1",
+        "service_branch": "Space Force",
+        "lines": 29,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "R-1",
+        "service_branch": "Air Force",
+        "lines": 277,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "R-1",
+        "service_branch": "Army",
+        "lines": 237,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "R-1",
+        "service_branch": "Defense-Wide",
+        "lines": 296,
+        "with_justification": 271,
+        "with_explanation": 267
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "R-1",
+        "service_branch": "Navy",
+        "lines": 259,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2026",
+        "exhibit_type": "R-1",
+        "service_branch": "Space Force",
+        "lines": 73,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "P-1",
+        "service_branch": "Air Force",
+        "lines": 199,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "P-1",
+        "service_branch": "Army",
+        "lines": 251,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "P-1",
+        "service_branch": "Defense-Wide",
+        "lines": 75,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "P-1",
+        "service_branch": "Navy",
+        "lines": 377,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "P-1",
+        "service_branch": "Space Force",
+        "lines": 31,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "R-1",
+        "service_branch": "Air Force",
+        "lines": 277,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "R-1",
+        "service_branch": "Army",
+        "lines": 234,
+        "with_justification": 0,
+        "with_explanation": 0
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "R-1",
+        "service_branch": "Defense-Wide",
+        "lines": 326,
+        "with_justification": 283,
+        "with_explanation": 276
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "R-1",
+        "service_branch": "Navy",
+        "lines": 254,
+        "with_justification": 226,
+        "with_explanation": 220
+      },
+      {
+        "budget_cycle": "PB2027",
+        "exhibit_type": "R-1",
+        "service_branch": "Space Force",
+        "lines": 72,
+        "with_justification": 0,
+        "with_explanation": 0
+      }
+    ]
+  },
+  "e5_search": {
+    "queries": 17,
+    "top1": 13,
+    "top5": 14,
+    "median_ms": 82,
+    "max_ms": 124,
+    "rows": [
+      {
+        "query": "conventional prompt strike",
+        "expected": "prompt strike",
+        "rank": 1,
+        "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
+        "ms": 112
+      },
+      {
+        "query": "counterspace",
+        "expected": "counterspace",
+        "rank": 1,
+        "top_result": "Counterspace Systems",
+        "ms": 78
+      },
+      {
+        "query": "F-35",
+        "expected": "F-35",
+        "rank": 1,
+        "top_result": "F-35 C2D2",
+        "ms": 76
+      },
+      {
+        "query": "B-21",
+        "expected": "B-21",
+        "rank": 1,
+        "top_result": "B-21 Raider",
+        "ms": 74
+      },
+      {
+        "query": "Columbia submarine",
+        "expected": "COLUMBIA Class",
+        "rank": 1,
+        "top_result": "COLUMBIA Class Submarine",
+        "ms": 81
+      },
+      {
+        "query": "collaborative combat aircraft",
+        "expected": "Collaborative Combat Aircraft",
+        "rank": 1,
+        "top_result": "Collaborative Combat Aircraft",
+        "ms": 87
+      },
+      {
+        "query": "golden dome",
+        "expected": "Golden Dome",
+        "rank": 1,
+        "top_result": "Golden Dome for America - Space Programs",
+        "ms": 82
+      },
+      {
+        "query": "hypersonic attack cruise missile",
+        "expected": "Hypersonic Attack Cruise",
+        "rank": 1,
+        "top_result": "Hypersonics Prototyping - Hypersonic Attack Cruise Missile (HACM)",
+        "ms": 96
+      },
+      {
+        "query": "AMRAAM",
+        "expected": "AMRAAM",
+        "rank": 1,
+        "top_result": "Advanced Medium Range Air-to-Air Missile (AMRAAM)",
+        "ms": 82
+      },
+      {
+        "query": "DDG-51 destroyer",
+        "expected": "DDG-51",
+        "rank": null,
+        "top_result": "Ship Preliminary Design & Feasibility Studies",
+        "ms": 82
+      },
+      {
+        "query": "0605518N",
+        "expected": "PROMPT STRIKE",
+        "rank": 1,
+        "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
+        "ms": 77
+      },
+      {
+        "query": "narrowband satellite communications",
+        "expected": "Narrowband Satellite",
+        "rank": 1,
+        "top_result": "Narrowband Satellite Communications",
+        "ms": 94
+      },
+      {
+        "query": "javelin missile",
+        "expected": "Javelin",
+        "rank": 1,
+        "top_result": "Anti-Armor Missile-Javelin",
+        "ms": 81
+      },
+      {
+        "query": "aegis missile defense",
+        "expected": "Aegis",
+        "rank": 2,
+        "top_result": "Ballistic Missile Defense Command and Control, Battle Management and Communications (C2BMC)",
+        "ms": 124
+      },
+      {
+        "query": "artificial intelligence army",
+        "expected": "Artificial Intelligence",
+        "rank": null,
+        "top_result": "Software Engineering Institute",
+        "ms": 105
+      },
+      {
+        "query": "E-7 wedgetail",
+        "expected": "^E-7$",
+        "rank": null,
+        "top_result": null,
+        "ms": 78
+      },
+      {
+        "query": "next generation fighter",
+        "expected": "F-47|Next Generation (Air Dominance|Fighter)",
+        "rank": 1,
+        "top_result": "Next Generation Fighter",
+        "ms": 100
+      }
+    ]
+  }
+}
