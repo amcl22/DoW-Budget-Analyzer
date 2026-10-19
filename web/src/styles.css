@@ -373,3 +373,62 @@ td.trend, th.trend { width: 80px; }
 .terms dd { margin: 0; line-height: 1.5; }
 @media (max-width: 640px) { .terms div { grid-template-columns: 1fr; } .watch-box { align-items: flex-start; } }
 .nav-link { white-space: nowrap; }
+
+/* Validation Studio */
+.footer-links { display: flex; gap: 16px; }
+.vs-head h1 { margin: 4px 0 6px; }
+.vs-head p { max-width: 80ch; margin: 0 0 12px; }
+.vs-scenarios { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.vs-scenarios p { flex-basis: 100%; margin: 4px 0 0; }
+.vs-label { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.chip.dashed { border-style: dashed; }
+.vs-grid { display: grid; grid-template-columns: minmax(220px, 280px) 1fr; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .vs-grid { grid-template-columns: 1fr; } }
+.vs-side h2 { margin-bottom: 8px; }
+.vs-check { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; font-size: 14px; line-height: 1.4; }
+.vs-facts { margin: 0 0 12px; display: grid; gap: 4px; }
+.vs-facts div { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.vs-facts dt { color: var(--muted); }
+.vs-facts dd { margin: 0; font-weight: 600; }
+.vs-steps { display: grid; gap: 10px; }
+.vs-step { background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--border); border-radius: var(--radius); padding: 12px 16px; }
+.vs-step.pass { border-left-color: var(--up); }
+.vs-step.warn { border-left-color: #c98a1b; }
+.vs-step.fail { border-left-color: var(--down); }
+.vs-step.waiting { border-left-color: var(--accent); }
+.vs-step.idle { opacity: 0.6; }
+.vs-step p { margin: 6px 0 4px; line-height: 1.5; }
+.vs-step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.vs-step-head h3 { margin: 0; font-size: 16px; flex: 1; min-width: 160px; }
+.vs-id { font-family: var(--mono); color: var(--muted); font-size: 13px; min-width: 2.2em; }
+.vs-kind { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; padding: 3px 8px; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); }
+.vs-kind.rules { border-color: var(--rdte); color: var(--rdte); }
+.vs-kind.owner { border-color: var(--accent); color: var(--accent); }
+.vs-state { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; padding: 3px 10px; border-radius: 999px; background: var(--border); color: var(--muted); }
+.vs-state.pass { background: var(--up-soft); color: var(--up); }
+.vs-state.warn { background: #fbefd9; color: #8a5a00; }
+.vs-state.fail { background: var(--down-soft); color: var(--down); }
+.vs-state.waiting { background: var(--accent-soft); color: var(--accent); }
+.vs-action { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 8px 0 4px; }
+.primary-btn { padding: 8px 14px; border: 0; border-radius: var(--radius); background: var(--accent); color: var(--surface); font: inherit; font-weight: 600; cursor: pointer; }
+.outline-btn { padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: transparent; color: var(--text); font: inherit; cursor: pointer; }
+.outline-btn:hover { border-color: var(--accent); }
+.vs-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.vs-table th, .vs-table td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--border); }
+.vs-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.vs-list { margin: 6px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
+.vs-esc { margin-top: 16px; }
+.vs-esc-item { border: 1px solid var(--border); border-left: 4px solid #c98a1b; border-radius: var(--radius); padding: 10px 14px; margin-top: 10px; }
+.vs-esc-item.blocks { border-left-color: var(--down); }
+.vs-esc-item h3 { margin: 4px 0; font-size: 15px; }
+.vs-esc-item p { margin: 0 0 8px; line-height: 1.5; }
+.vs-to { color: var(--rdte); }
+.vs-buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.vs-trace ol { list-style: none; margin: 8px 0 0; padding: 0; }
+.vs-trace li { display: grid; grid-template-columns: 76px 36px 1fr; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; line-height: 1.45; }
+.vs-trace li.pass span:last-child { color: var(--up); }
+.vs-trace li.warn span:last-child, .vs-trace li.waiting span:last-child { color: var(--rdte); }
+.vs-trace li.fail span:last-child { color: var(--down); }
+@media (prefers-color-scheme: dark) {
+  .vs-state.warn { background: #3a2c10; color: #f0c26b; }
+}

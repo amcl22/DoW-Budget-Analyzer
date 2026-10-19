@@ -286,3 +286,10 @@ def test_problem_reports_status_and_health(client):
     assert s["lines"] == 59 and s["open_issues"] == 1 and len(s["releases"]) == 2
     h = client.get("/api/health").json()
     assert h == {"ok": True, "releases": 2, "lines": 59, "explanations": 0}
+
+
+def test_validation_results_are_served(client):
+    v = client.get("/api/validation").json()
+    assert {"e1_lines", "e2_totals", "e3_explanations", "e4_outliers", "e5_search", "trace"} <= set(v["results"])
+    assert v["status"]["lines"] == 59
+    assert isinstance(v["program_keys"], dict)

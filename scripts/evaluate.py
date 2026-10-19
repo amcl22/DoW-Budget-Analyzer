@@ -270,12 +270,22 @@ def e6_coverage(conn) -> dict:
 
 
 def main() -> None:
+    from datetime import datetime, timezone
+
     engine = create_engine(database_url())
+    results: dict = {"seed": SEED, "run_id": f"EVAL-{datetime.now(timezone.utc):%Y%m%d-%H%M}", "trace": []}
+
+    def step(key: str, fn, *args):
+        started = datetime.now(timezone.utc)
+        results[key] = fn(*args)
+        results["trace"].append({"step": key, "started": started.isoformat(),
+                                 "seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 1)})
+
     with engine.connect() as conn:
-        results = {"seed": SEED, "e1_lines": e1_lines(conn), "e2_totals": e2_totals(conn),
-                   "e3_explanations": e3_explanations(conn), "e4_outliers": e4_outliers(conn),
-                   "e6_coverage": e6_coverage(conn)}
-    results["e5_search"] = e5_search()
+        for key, fn in (("e2_totals", e2_totals), ("e1_lines", e1_lines), ("e4_outliers", e4_outliers),
+                        ("e3_explanations", e3_explanations), ("e6_coverage", e6_coverage)):
+            step(key, fn, conn)
+    step("e5_search", e5_search)
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / "results.json").write_text(json.dumps(results, indent=2, default=str))
     e1, e2, e3, e4, e5 = (results[k] for k in ("e1_lines", "e2_totals", "e3_explanations", "e4_outliers", "e5_search"))

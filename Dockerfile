@@ -15,6 +15,8 @@ COPY pipeline ./pipeline
 COPY api ./api
 COPY config ./config
 COPY sources ./sources
+# the latest evaluation run, shown on the Validation Studio page
+COPY docs/eval ./docs/eval
 # editable install: the pipeline reads config/ and sources/ relative to the source tree
 RUN pip install --no-cache-dir -e .
 COPY --from=web /web/dist ./web/dist

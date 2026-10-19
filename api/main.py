@@ -82,6 +82,29 @@ def status_endpoint(conn: Conn) -> dict:
     return data_status(conn)
 
 
+EVAL_RESULTS = Path(__file__).resolve().parent.parent / "docs" / "eval" / "results.json"
+
+
+@app.get("/api/validation")
+def validation_endpoint(conn: Conn) -> dict:
+    """The latest evaluation run (scripts/evaluate.py) with the live data status, for the
+    Validation Studio page."""
+    import json
+
+    if not EVAL_RESULTS.exists():
+        raise HTTPException(404, "no evaluation results yet: run scripts/evaluate.py")
+    results = json.loads(EVAL_RESULTS.read_text())
+    ids = [f["id"] for f in results.get("e1_lines", {}).get("failures", [])]
+    keys = {}
+    if ids:
+        from sqlalchemy import text as sql
+
+        keys = {str(r.id): r.program_key for r in conn.execute(sql(
+            "SELECT li.id, p.program_key FROM budget_line_item li JOIN program p ON p.id = li.program_id WHERE li.id = ANY(:ids)"
+        ), {"ids": ids})}
+    return {"results": results, "status": data_status(conn), "program_keys": keys}
+
+
 @app.post("/api/programs/{key}/issues")
 def report_issue_endpoint(conn: Conn, key: str,
                           message: Annotated[str, Body(min_length=3, max_length=2000)],
