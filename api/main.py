@@ -92,7 +92,9 @@ def summary_endpoint(conn: Conn, kind: Literal["trends", "execution"] = "trends"
     s = summary.trends(conn, cycle or None, exhibit, service or None) if kind == "trends" \
         else summary.execution(conn, fy, exhibit, service or None)
     if ai:
-        s["ai"] = summary.ai_narrative(s)
+        # the same team-wide hourly cap as Q&A: AI calls cost money
+        s["ai"] = summary.ai_narrative(s) if not qa.configured() or qa.limiter.allow() \
+            else {"withheld": "The team's hourly AI limit is used up; try again later."}
     s["ai_available"] = qa.configured()
     return s
 
