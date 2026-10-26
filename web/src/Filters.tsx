@@ -16,8 +16,8 @@ const EXHIBITS = [
 ];
 
 export function Filters({ facets, query, cycle, latest, onChange, onReset }: Props) {
-  const accounts = (facets?.accounts ?? []).filter((a) => !query.exhibit || a.exhibit === query.exhibit);
-  const activities = (facets?.budget_activities ?? []).filter((b) => !query.exhibit || b.exhibit === query.exhibit);
+  const accounts = (facets?.accounts ?? []).filter((a) => !query.exhibit || a.exhibits.includes(query.exhibit));
+  const activities = (facets?.budget_activities ?? []).filter((b) => !query.exhibit || b.exhibits.includes(query.exhibit));
   const toggleService = (s: string) =>
     onChange({ service: query.service.includes(s) ? query.service.filter((x) => x !== s) : [...query.service, s] });
   const active =
@@ -91,8 +91,8 @@ export function Filters({ facets, query, cycle, latest, onChange, onReset }: Pro
         <select value={query.budgetActivity} onChange={(e) => onChange({ budgetActivity: e.target.value })}>
           <option value="">All budget activities</option>
           {activities.map((b) => (
-            <option key={`${b.exhibit}|${b.value}`} value={b.value}>
-              {query.exhibit ? b.value : `${b.exhibit} · ${b.value}`}
+            <option key={b.value} value={b.value}>
+              {b.label}
             </option>
           ))}
         </select>

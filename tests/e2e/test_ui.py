@@ -76,6 +76,7 @@ def test_program_page_chart_history_and_watch(page):
     assert "FY" in page.inner_text(".tooltip")
     assert page.locator(".matrix tbody tr").count() >= 3
     assert page.locator(".refs a").count() >= 1
+    page.on("dialog", lambda d: d.accept("E2E test"))      # the name prompt; required to unstar
     watch = page.locator("button.watch")
     before = watch.get_attribute("aria-pressed")
     watch.click()
@@ -89,6 +90,7 @@ def test_program_page_chart_history_and_watch(page):
 
 def test_watchlist_page(page):
     page.goto(f"{BASE}/program/0604181C")
+    page.on("dialog", lambda d: d.accept("E2E test"))
     page.wait_for_selector("button.watch")
     was_watched = page.get_attribute("button.watch", "aria-pressed") == "true"
     if not was_watched:

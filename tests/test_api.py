@@ -78,6 +78,10 @@ def client():
     engine.dispose()
 
 
+def _unwatch(client, key, name="Tester"):
+    return client.request("DELETE", f"/api/programs/{key}/watch", json={"name": name})
+
+
 def _search(client, **params):
     resp = client.get("/api/search", params=params)
     assert resp.status_code == 200, resp.text
@@ -169,7 +173,11 @@ def test_csv_export(client):
     assert resp.status_code == 200 and resp.headers["content-type"].startswith("text/csv")
     lines = resp.text.strip().splitlines()
     assert lines[0].startswith("budget_cycle,exhibit_type,service_branch")
-    assert len(lines) == 1 + 9
+    assert "budget_year_amount_$M" in lines[0] and len(lines) == 1 + 9
+    import csv as _csv
+    m = list(_csv.DictReader(lines))
+    k = list(_csv.DictReader(client.get("/api/search.csv", params={"exhibit": "P-1", "sort": "budget", "units": "k"}).text.splitlines()))
+    assert float(m[0]["budget_year_amount_$M"]) * 1000 == float(k[0]["budget_year_amount_$K"])
 
 
 @pytest.mark.parametrize("params", [{"sort": "id; drop table program"}, {"page_size": 1000}, {"page": 0}])
@@ -222,9 +230,11 @@ def test_watch_toggle_is_idempotent_and_listed(client):
     assert client.get(f"/api/programs/{key}").json()["watched"] is True
     [row] = [r for r in _search(client, q=key)["results"] if r["program_element"] == key]
     assert row["watched"] is True
-    client.delete(f"/api/programs/{key}/watch")
+    assert client.delete(f"/api/programs/{key}/watch").status_code == 400       # removals need a name
+    assert client.get("/api/watches").json() != []
+    _unwatch(client, key)
     assert client.get("/api/watches").json() == []
-    assert client.delete(f"/api/programs/{key}/watch").status_code == 200       # already gone: fine
+    assert _unwatch(client, key).status_code == 200       # already gone: fine
 
 
 def test_dashboard_lists_watched_programs_flagged_first(client):
@@ -238,7 +248,7 @@ def test_dashboard_lists_watched_programs_flagged_first(client):
     assert d["flagged"] == 1
     assert d["budget_year_total"] == 1552 + 215322
     for key in ("0601102A", "2031A:5757A05111"):
-        client.delete(f"/api/programs/{key}/watch")
+        _unwatch(client, key)
     assert client.get("/api/dashboard").json()["watched"] == []
 
 
@@ -268,7 +278,7 @@ def test_watch_records_who_and_logs_every_change(client):
     assert [(e["action"], e["actor"]) for e in d["events"][:3]] == [("watch", None), ("unwatch", "Sam"), ("watch", "Pat")]
     assert d["watched"][0]["added_by"] is None
     assert client.put(f"/api/programs/{key}/watch", json={"name": "x" * 61}).status_code == 422
-    client.delete(f"/api/programs/{key}/watch")
+    _unwatch(client, key)
     assert "explanations" in detail and detail["explanations"] == []
 
 
