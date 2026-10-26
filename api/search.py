@@ -11,6 +11,15 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 MAX_PAGE_SIZE = 200
+# one key per budget activity, whatever its spelling or capitalization in a given exhibit
+BA_KEY = """CASE WHEN lower(regexp_replace(trim(f.budget_activity_title), '\\s+', ' ', 'g'))
+                   IN ('spares', 'spare and repair parts') THEN 'spares and repair parts'
+              ELSE lower(regexp_replace(trim(f.budget_activity_title), '\\s+', ' ', 'g')) END"""
+
+
+def ba_key(title: str) -> str:
+    k = " ".join(title.split()).lower()
+    return "spares and repair parts" if k in ("spares", "spare and repair parts") else k
 MAX_EXPORT_ROWS = 20000
 # ts_headline markers: control characters, so the snippet stays plain text and the client
 # highlights it without ever rendering HTML from the data
@@ -80,11 +89,14 @@ def _where(p: SearchParams) -> tuple[str, dict, str]:
         clauses.append("f.budget_cycle = :cycle")
         params["cycle"] = p.cycle
     for name, column in (("exhibit", "f.exhibit_type"), ("service", "f.service_branch"),
-                         ("account", "f.appropriation_account"), ("budget_activity", "f.budget_activity_title")):
+                         ("account", "f.appropriation_account")):
         values = getattr(p, name)
         if values:
             clauses.append(f"{column} = ANY(:{name})")
             params[name] = list(values)
+    if p.budget_activity:
+        clauses.append(f"({BA_KEY}) = ANY(:budget_activity)")
+        params["budget_activity"] = [ba_key(v) for v in p.budget_activity]
     if p.min_amount is not None:
         clauses.append("coalesce(f.budget_year_amount, 0) >= :min_amount")
         params["min_amount"] = p.min_amount
@@ -188,12 +200,28 @@ def facets(conn: Connection, cycle: str | None) -> dict:
             f"GROUP BY {group} ORDER BY {group}"
         ), params).mappings()]
 
+    accounts = [dict(r) for r in conn.execute(text(f"""
+        SELECT f.appropriation_account AS value, acc.title, array_agg(DISTINCT f.exhibit_type) AS exhibits,
+               count(*) AS lines
+        FROM line_item_flat f JOIN appropriation_account acc ON acc.code = f.appropriation_account {where}
+        GROUP BY f.appropriation_account, acc.title ORDER BY f.appropriation_account
+    """), params).mappings()]
+    # one entry per activity: blank titles left out, spellings merged, the most common
+    # non-all-caps spelling shown
+    ba_where = (where + " AND " if where else "WHERE ") + "coalesce(trim(f.budget_activity_title), '') <> ''"
+    activities = [dict(r) for r in conn.execute(text(f"""
+        SELECT ({BA_KEY}) AS value,
+               coalesce(mode() WITHIN GROUP (ORDER BY f.budget_activity_title)
+                          FILTER (WHERE f.budget_activity_title <> upper(f.budget_activity_title)),
+                        min(f.budget_activity_title)) AS label,
+               array_agg(DISTINCT f.exhibit_type) AS exhibits, count(*) AS lines
+        FROM line_item_flat f {ba_where}
+        GROUP BY 1 ORDER BY 2
+    """), params).mappings()]
     return {
         "cycles": [dict(c) for c in cycles],
         "exhibits": grouped("f.exhibit_type AS value", "f.exhibit_type"),
         "services": grouped("f.service_branch AS value", "f.service_branch"),
-        "accounts": grouped("f.appropriation_account AS value, acc.title, f.exhibit_type AS exhibit",
-                            "f.appropriation_account, acc.title, f.exhibit_type"),
-        "budget_activities": grouped("f.budget_activity_title AS value, f.exhibit_type AS exhibit",
-                                     "f.exhibit_type, f.budget_activity_title"),
+        "accounts": accounts,
+        "budget_activities": activities,
     }

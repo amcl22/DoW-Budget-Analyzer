@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { fetchProgram, reportIssue, setWatch, setWatcherName, watcherName, type Explanation, type HistoryRow, type ProgramDetail } from "./api";
+import { BudgetExecution } from "./BudgetExecution";
 import { FundingChart, TYPE_LABEL } from "./FundingChart";
 import { changeKind, fmtChange, fmtCount, fmtDate, fmtM, fmtMoney, fmtPct, SMALL_BASE } from "./format";
 import { AskLink } from "./AskLink";
@@ -153,7 +154,7 @@ export function ProgramPage({ programKey }: { programKey: string }) {
       const watched = await setWatch(program.program_key, !data.watched);
       setData({ ...data, watched, watch: watched ? { added_by: watcherName() || null, created_at: new Date().toISOString() } : null });
     } catch (e) {
-      setError(String(e));
+      if (!String(e).includes("name is needed")) setError(String(e));
     } finally {
       setWatchBusy(false);
     }
@@ -269,6 +270,8 @@ export function ProgramPage({ programKey }: { programKey: string }) {
           </table>
         </div>
       </section>
+
+      <BudgetExecution history={data.history} />
 
       {description && (
         <section className="panel">

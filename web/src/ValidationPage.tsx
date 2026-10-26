@@ -15,6 +15,8 @@ interface Results {
   e3_explanations: { population: number; sample: number; text_on_cited_page: number; right_program_section: number; failures: { id: number; release: string; pe: string; page: number; start: string }[] };
   e4_outliers: { lines: number; confirmed: number; rows: { number: string; title: string; current: number | null; budget: number; confirmed_on_page: boolean }[] };
   e5_search: { queries: number; top1: number; top5: number; median_ms: number; rows: { query: string; expected: string; rank: number | null; top_result: string | null }[] };
+  e7_summary?: { checks: number; matches: number; mismatches: string[]; execution_fy2025_coverage: Record<string, number>;
+    takeaways_checked: number; takeaway_figures_unverified: string[] };
   e6_coverage: { rows: { budget_cycle: string; exhibit_type: string; service_branch: string; lines: number; with_justification: number; with_explanation: number }[] };
 }
 interface Payload { results: Results; status: DataStatus; program_keys: Record<string, string> }
@@ -155,9 +157,21 @@ export function ValidationPage() {
           : `PB2027 RDT&E lines with justification detail: ${cov.map((c) => `${c.service_branch} ${pct(c.with_justification, c.lines)}`).join(", ")}.`,
       },
     ];
+    if (r.e7_summary) {
+      const e7 = r.e7_summary;
+      const cov = Object.values(e7.execution_fy2025_coverage);
+      steps.push({
+        id: "S9", title: "1-page summary figures", kind: "CODE",
+        state: e7.matches === e7.checks && e7.takeaway_figures_unverified.length === 0 ? "PASS" : "WARN",
+        summary: `${e7.matches}/${e7.checks} summary totals match an independent recomputation from the raw amounts; ` +
+          `${e7.takeaways_checked} written takeaways, ${e7.takeaway_figures_unverified.length} unverified figures. ` +
+          `Execution view covers ${pct(Math.min(...cov), 1)}–${pct(Math.max(...cov), 1)} of FY2025 dollars (programs in all three releases).`,
+        detail: e7.mismatches.length > 0 && <ul className="vs-list">{e7.mismatches.map((m) => <li key={m}>{m}</li>)}</ul>,
+      });
+    }
     const blocking = steps.some((s) => s.state === "FAIL");
     steps.push({
-      id: "S9", title: "Publish gate", kind: "OWNER GATE",
+      id: "S10", title: "Publish gate", kind: "OWNER GATE",
       state: blocking ? "IDLE" : published ? "PASS" : "WAITING",
       summary: blocking ? "Not reached: a hard check failed, so this release can't be published."
         : published ? "Published by the data owner. Team sees the release." : "Checks done. The release reaches the team only when the data owner publishes it.",
@@ -202,7 +216,7 @@ export function ValidationPage() {
   if (!data || !model) return <div className="app"><p className="loading">Loading…</p></div>;
   const r = data.results;
   const runAt = r.trace?.[0]?.started;
-  const stepOf: Record<string, string> = { e2_totals: "S2", e1_lines: "S4", e4_outliers: "S5", e3_explanations: "S6", e6_coverage: "S8", e5_search: "S7" };
+  const stepOf: Record<string, string> = { e2_totals: "S2", e1_lines: "S4", e4_outliers: "S5", e3_explanations: "S6", e6_coverage: "S8", e5_search: "S7", e7_summary: "S9" };
   const stepById = Object.fromEntries(model.steps.map((s) => [s.id, s]));
   const act = async (e: Escalation, a: Escalation["actions"][number]) => {
     try {
@@ -257,7 +271,7 @@ export function ValidationPage() {
             <div><dt>Open problem reports</dt><dd>{data.status.open_issues}</dd></div>
           </dl>
           <button className="reset" onClick={reset}>Reset</button>
-          <p className="muted small">Code steps run on their own. The release stops at the publish gate (S9) and at any failed hard check (S1–S3).</p>
+          <p className="muted small">Code steps run on their own. The release stops at the publish gate (S10) and at any failed hard check (S1–S3).</p>
         </aside>
 
         <div className="vs-steps">
@@ -270,9 +284,9 @@ export function ValidationPage() {
                 <span className={`vs-state ${s.state.toLowerCase()}`}>{s.state}</span>
               </div>
               <p>{s.summary}</p>
-              {s.id === "S9" && s.state === "WAITING" && (
+              {s.id === "S10" && s.state === "WAITING" && (
                 <div className="vs-action">
-                  <button className="primary-btn" onClick={() => { setPublished(true); note("S9", "Release published by the data owner (simulated here; the real command is budget publish).", "ok"); }}>
+                  <button className="primary-btn" onClick={() => { setPublished(true); note("S10", "Release published by the data owner (simulated here; the real command is budget publish).", "ok"); }}>
                     Publish as data owner
                   </button>
                   <span className="muted small">Simulated here. In production the data owner runs <span className="mono">budget publish</span> after reading the report.</span>

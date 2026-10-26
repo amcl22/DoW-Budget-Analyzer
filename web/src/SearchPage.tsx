@@ -5,6 +5,7 @@ import { ResultsTable } from "./ResultsTable";
 import { ResultsTrend } from "./ResultsTrend";
 import { fmtCount, fmtMoney } from "./format";
 import { AskLink } from "./AskLink";
+import { DataAsOf } from "./DataAsOf";
 import { Link } from "./router";
 
 const LATEST = "latest";   // URL has no cycle: use the newest release once facets load
@@ -135,13 +136,14 @@ export function SearchPage() {
     <div className="app">
       <header className="masthead">
         <div className="brand">
-          <h1>DoW Budget Search <AskLink className="nav-link" /><Link className="nav-link" href="/watchlist">★ Team watchlist</Link><Link className="nav-link" href="/glossary">Glossary &amp; coverage</Link></h1>
+          <h1>DoW Budget Search <AskLink className="nav-link" /><Link className="nav-link" href="/watchlist">★ Team watchlist</Link><Link className="nav-link" href="/summary">1-page summary</Link><Link className="nav-link" href="/glossary">Glossary &amp; coverage</Link></h1>
           <p>
             RDT&amp;E (R-1) and Procurement (P-1) line items, President's Budget
             {facets && facets.cycles.length > 0 &&
               ` ${facets.cycles[facets.cycles.length - 1].budget_cycle}–${facets.cycles[0].budget_cycle}`}
             . Amounts in $ millions; every row links to its source page.
           </p>
+          <p className="small muted"><DataAsOf long /></p>
         </div>
         <div className="search">
           <svg aria-hidden="true" viewBox="0 0 20 20" className="search-icon">
@@ -175,7 +177,10 @@ export function SearchPage() {
               {loading && <span className="loading"> · updating…</span>}
             </span>
             {effective && data.total > 0 && (
-              <a className="export" href={exportUrl(effective)} download>Export CSV</a>
+              <span className="export">
+                Export CSV: <a href={exportUrl(effective, "m")} download title="Amounts in $ millions, as on screen">$M</a>
+                {" · "}<a href={exportUrl(effective, "k")} download title="Amounts in $ thousands, as published in the exhibits">$K</a>
+              </span>
             )}
           </>
         ) : (

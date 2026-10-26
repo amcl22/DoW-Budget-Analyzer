@@ -73,8 +73,8 @@ export interface Facets {
   cycles: { budget_cycle: string; fiscal_year: number; lines: number; exhibits: string[] }[];
   exhibits: { value: string; lines: number }[];
   services: { value: string; lines: number }[];
-  accounts: { value: string; title: string; exhibit: string; lines: number }[];
-  budget_activities: { value: string; exhibit: string; lines: number }[];
+  accounts: { value: string; title: string; exhibits: string[]; lines: number }[];
+  budget_activities: { value: string; label: string; exhibits: string[]; lines: number }[];
 }
 
 export const PAGE_SIZE = 50;
@@ -126,7 +126,7 @@ export const fetchSearch = (q: Query, signal?: AbortSignal) =>
 export const fetchFacets = (cycle: string, signal?: AbortSignal) =>
   getJson<Facets>(`/api/facets${cycle ? `?cycle=${encodeURIComponent(cycle)}` : ""}`, signal);
 
-export const exportUrl = (q: Query) => `/api/search.csv?${toParams(q, true)}`;
+export const exportUrl = (q: Query, units: "m" | "k" = "m") => `/api/search.csv?${toParams(q, true)}&units=${units}`;
 
 export type AmountType = "actual" | "enacted" | "cr" | "request" | "estimate";
 
@@ -220,7 +220,19 @@ export function setWatcherName(name: string): void {
   try { window.localStorage.setItem(NAME_KEY, name.trim().slice(0, 60)); } catch { /* private window: not remembered */ }
 }
 
+/** The watcher's name, asking for it if this browser hasn't given one. Required to remove a star.
+ * Returns null if the person cancels or leaves it empty. */
+export function requireWatcherName(): string | null {
+  const known = watcherName();
+  if (known) return known;
+  const name = (window.prompt("Your name (required to remove a star; it's shown in the watchlist history):", "") ?? "").trim();
+  if (!name) return null;
+  setWatcherName(name);
+  return name;
+}
+
 export async function setWatch(key: string, watched: boolean): Promise<boolean> {
+  if (!watched && !requireWatcherName()) throw new Error("A name is needed to remove a star.");
   const resp = await fetch(`/api/programs/${encodeURIComponent(key)}/watch`, {
     method: watched ? "PUT" : "DELETE",
     headers: { "Content-Type": "application/json" },

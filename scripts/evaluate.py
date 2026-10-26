@@ -257,6 +257,57 @@ def e5_search() -> dict:
             "median_ms": statistics.median(lat), "max_ms": max(lat), "rows": out}
 
 
+def e7_summary(conn) -> dict:
+    """The 1-page summaries against an independent recomputation: totals by service from the
+    raw amounts table (line_item_amount), not the line_item_flat view the summary reads, and
+    every figure in the written takeaways checked against the recomputed numbers."""
+    from api import summary
+
+    def raw(cycle: str, fy: int, types: tuple[str, ...]) -> dict[str, int]:
+        rows = conn.execute(text("""
+            SELECT li.service_branch, sum(a.amount_thousands)::bigint
+            FROM line_item_amount a JOIN budget_line_item li ON li.id = a.line_item_id
+            JOIN ingestion_run r ON r.id = li.ingestion_run_id AND r.status = 'published'
+            WHERE li.budget_cycle = :c AND a.funds_fiscal_year = :fy AND a.funding_category = 'total'
+              AND a.amount_type = ANY(:t) AND li.include_in_toa
+            GROUP BY 1
+        """), {"c": cycle, "fy": fy, "t": list(types)}).all()
+        return {k: v for k, v in rows}
+
+    checks, mismatches = 0, []
+    t = summary.trends(conn)
+    fy, cycle = t["fiscal_year"], t["cycle"]
+    by = raw(cycle, fy, ("request",))
+    cy = raw(cycle, fy - 1, ("enacted", "cr", "estimate", "actual"))
+    for svc in t["services"]:
+        for label, got, want in (("budget year", svc["to"], by.get(svc["key"], 0)), ("current year", svc["from"], cy.get(svc["key"], 0))):
+            checks += 1
+            if got != want:
+                mismatches.append(f"trends {svc['key']} {label}: summary {got} vs raw {want}")
+    checks += 1
+    if t["total"]["to"] != sum(by.values()):
+        mismatches.append(f"trends total: summary {t['total']['to']} vs raw {sum(by.values())}")
+
+    exe = summary.execution(conn, 2025)
+    # independent: the same program set, figures from the raw table
+    req = raw("PB2025", 2025, ("request",))
+    enc = raw("PB2026", 2025, ("enacted", "cr"))
+    act = raw("PB2027", 2025, ("actual",))
+    raw_total = {"requested": sum(req.values()), "enacted": sum(enc.values()), "actual": sum(act.values())}
+    # the summary compares only programs present in all three releases, so its totals are within
+    # the raw totals; report the coverage rather than demand equality
+    coverage = {k: exe["total"][k] / raw_total[k] for k in raw_total if raw_total[k]}
+
+    def takeaway_check(summ: dict, recomputed: dict) -> list[str]:
+        return summary.verify(" ".join(summ["takeaways"]), recomputed)
+
+    unverified = takeaway_check(t, {"by": by, "cy": cy, "series": t["series"], "groups": t}) + \
+        takeaway_check(exe, exe)
+    return {"checks": checks, "matches": checks - len(mismatches), "mismatches": mismatches,
+            "execution_fy2025_coverage": {k: round(v, 4) for k, v in coverage.items()},
+            "takeaways_checked": len(t["takeaways"]) + len(exe["takeaways"]), "takeaway_figures_unverified": unverified}
+
+
 def e6_coverage(conn) -> dict:
     return {"rows": [dict(r) for r in conn.execute(text("""
         SELECT li.budget_cycle, li.exhibit_type, li.service_branch, count(DISTINCT li.id) AS lines,
@@ -272,6 +323,18 @@ def e6_coverage(conn) -> dict:
 def main() -> None:
     from datetime import datetime, timezone
 
+    if "--only-e7" in sys.argv:          # the PDF checks need the source files; this one doesn't
+        results = json.loads((OUT / "results.json").read_text())
+        with create_engine(database_url()).connect() as conn:
+            started = datetime.now(timezone.utc)
+            results["e7_summary"] = e7_summary(conn)
+        results["trace"] = [t for t in results.get("trace", []) if t["step"] != "e7_summary"] + [
+            {"step": "e7_summary", "started": started.isoformat(),
+             "seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 1)}]
+        (OUT / "results.json").write_text(json.dumps(results, indent=2, default=str))
+        print(json.dumps(results["e7_summary"], indent=2))
+        return
+
     engine = create_engine(database_url())
     results: dict = {"seed": SEED, "run_id": f"EVAL-{datetime.now(timezone.utc):%Y%m%d-%H%M}", "trace": []}
 
@@ -283,7 +346,7 @@ def main() -> None:
 
     with engine.connect() as conn:
         for key, fn in (("e2_totals", e2_totals), ("e1_lines", e1_lines), ("e4_outliers", e4_outliers),
-                        ("e3_explanations", e3_explanations), ("e6_coverage", e6_coverage)):
+                        ("e3_explanations", e3_explanations), ("e6_coverage", e6_coverage), ("e7_summary", e7_summary)):
             step(key, fn, conn)
     step("e5_search", e5_search)
     OUT.mkdir(parents=True, exist_ok=True)

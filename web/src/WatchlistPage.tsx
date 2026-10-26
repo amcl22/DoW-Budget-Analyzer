@@ -24,6 +24,15 @@ export function WatchlistPage() {
       await setWatch(key, false);
       await load();
     } catch (e) {
+      if (!String(e).includes("name is needed")) setError(String(e));
+    }
+  };
+
+  const undo = async (key: string) => {
+    try {
+      await setWatch(key, true);
+      await load();
+    } catch (e) {
       setError(String(e));
     }
   };
@@ -43,9 +52,8 @@ export function WatchlistPage() {
           </p>
           <p className="muted small how-shared">
             <strong>How it works:</strong> there are no logins, so this list is shared by everyone with the team
-            link, and anyone can add or remove a star. When you first star a program you're asked for a name
-            (optional); it appears next to the star, and <a href="#history">Recent changes</a> below records every
-            add and remove.
+            link. Adding a star asks for your name (optional); <strong>removing one requires a name</strong>, and
+            {" "}<a href="#history">Recent changes</a> below records every add and remove, with an Undo for removals.
           </p>
         </div>
       </header>
@@ -142,13 +150,21 @@ export function WatchlistPage() {
         <section className="panel" id="history" style={{ marginTop: 16 }}>
           <h2>Recent changes</h2>
           <ul className="events">
-            {data.events.map((e, i) => (
-              <li key={i}>
-                <span className="muted">{fmtDate(e.created_at)}</span>{" "}
-                <strong>{e.actor ?? "Someone"}</strong> {e.action === "watch" ? "starred" : "removed"}{" "}
-                <Link href={programPath(e.program_key)}>{e.latest_title}</Link>
-              </li>
-            ))}
+            {data.events.map((e, i) => {
+              // Undo only on a program's latest change, when that change removed it
+              const latest = data.events.findIndex((x) => x.program_key === e.program_key) === i;
+              const stillOff = !data.watched.some((w) => w.program_key === e.program_key);
+              return (
+                <li key={i}>
+                  <span className="muted">{fmtDate(e.created_at)}</span>{" "}
+                  <strong>{e.actor ?? "Someone"}</strong> {e.action === "watch" ? "starred" : "removed"}{" "}
+                  <Link href={programPath(e.program_key)}>{e.latest_title}</Link>
+                  {e.action === "unwatch" && latest && stillOff && (
+                    <> · <button className="linklike" onClick={() => undo(e.program_key)}>Undo</button></>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

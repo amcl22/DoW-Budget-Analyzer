@@ -129,6 +129,27 @@ star and unstar with who made it (`watch_event`). `GET /api/dashboard` returns t
 - `/glossary` explains the acronyms, how to read the numbers, and what isn't covered (O&M,
   military personnel, construction, Army/Air Force/Space Force R-2s, P-40s).
 
+## 1-page summaries
+
+`/summary` (the "1-page summary" link) has two kinds:
+- **Funding trends:** one release's budget year against the current year. It covers totals,
+  services, sectors (budget activities, with spellings merged), the largest program increases
+  and decreases, new starts, and the multi-year trend.
+- **Budget execution:** one fiscal year's request, enacted amount (or CR level) and actual.
+  It shows how Congress changed the request, and which programs came in above or below
+  budget.
+
+Filters for exhibit and service apply to both, and **Print / save as PDF** lays either one out
+on one Letter page. All figures and takeaways are computed by code (`api/summary.py`). With
+`ANTHROPIC_API_KEY` set, a box can add an AI-written narrative. It is shown only if every
+dollar figure and percentage in it matches a computed figure; otherwise it is withheld, with
+the reason. `scripts/evaluate.py --only-e7` recomputes the summary totals from the raw amounts
+table and checks the takeaways' figures. Results appear on the Validation Studio as S9.
+
+Related: each program page has a **Request → enacted → actual** table. CSV exports label their
+units (`_$M` by default, `units=k` for $ thousands). Removing a watchlist star needs a name,
+and removals can be undone. The header shows when the data was loaded and from which releases.
+
 ## Operations: problem reports, status, monitoring
 
 - **Report a problem** on any program page records a data problem report (`data_issue`).

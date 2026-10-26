@@ -31,6 +31,11 @@
       "step": "e5_search",
       "started": "2026-10-19T00:54:06.697856+00:00",
       "seconds": 2.2
+    },
+    {
+      "step": "e7_summary",
+      "started": "2026-10-26T18:33:33.501079+00:00",
+      "seconds": 0.4
     }
   ],
   "e2_totals": {
@@ -1578,5 +1583,17 @@
         "ms": 95
       }
     ]
+  },
+  "e7_summary": {
+    "checks": 11,
+    "matches": 11,
+    "mismatches": [],
+    "execution_fy2025_coverage": {
+      "requested": 0.9569,
+      "enacted": 0.9537,
+      "actual": 0.9372
+    },
+    "takeaways_checked": 12,
+    "takeaway_figures_unverified": []
   }
 }

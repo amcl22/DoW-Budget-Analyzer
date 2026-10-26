@@ -21,7 +21,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from pipeline.config import database_url
 
-from . import qa
+from . import qa, summary
 from .access import LinkAccessMiddleware
 from .programs import (dashboard, data_status, get_program, open_issues, program_detail, report_issue, set_watch,
                        watchlist)
@@ -80,6 +80,21 @@ def health(conn: Conn) -> dict:
 def status_endpoint(conn: Conn) -> dict:
     """When each release was loaded, totals, and open problem reports."""
     return data_status(conn)
+
+
+@app.get("/api/summary")
+def summary_endpoint(conn: Conn, kind: Literal["trends", "execution"] = "trends", cycle: str | None = None,
+                     fy: int = Query(2025, ge=2024, le=2026), exhibit: Literal["R-1", "P-1"] | None = None,
+                     service: str | None = None, ai: bool = False) -> dict:
+    """One-page summary: 'trends' (one release's budget year vs current year: services, sectors,
+    largest moves) or 'execution' (one fiscal year's request vs enacted vs actual). Computed from
+    the data; ai=1 adds a Claude-written narrative only if every figure in it checks out."""
+    s = summary.trends(conn, cycle or None, exhibit, service or None) if kind == "trends" \
+        else summary.execution(conn, fy, exhibit, service or None)
+    if ai:
+        s["ai"] = summary.ai_narrative(s)
+    s["ai_available"] = qa.configured()
+    return s
 
 
 EVAL_RESULTS = Path(__file__).resolve().parent.parent / "docs" / "eval" / "results.json"
@@ -169,6 +184,10 @@ def watch_endpoint(conn: Conn, key: str, name: WatchName = None) -> dict:
 
 @app.delete("/api/programs/{key}/watch")
 def unwatch_endpoint(conn: Conn, key: str, name: WatchName = None) -> dict:
+    """Unstar. Requires a name: anyone with the team link can remove a star, so removals are
+    always attributed in the history (and can be undone from the watchlist)."""
+    if not (name or "").strip():
+        raise HTTPException(400, "Give your name to remove a star; removals are shown in the watchlist history.")
     return _watch(conn, key, False, name)
 
 
@@ -217,18 +236,35 @@ EXPORT_COLUMNS = [
 ]
 
 
+MONEY_COLUMNS = {"prior_year_amount", "current_year_amount", "budget_year_amount", "budget_year_discretionary",
+                 "budget_year_mandatory", "change_amount"}
+
+
 @app.get("/api/search.csv")
-def export_endpoint(conn: Conn, params: Params) -> StreamingResponse:
-    """The same search as a CSV file ($ thousands), up to 20,000 rows."""
+def export_endpoint(conn: Conn, params: Params,
+                    units: Literal["k", "m"] = Query("m", description="m = $ millions (as on screen), k = $ thousands (as published)")) -> StreamingResponse:
+    """The same search as a CSV file, up to 20,000 rows. Money columns say their unit in the
+    header ($M by default, matching the screen; $K as published)."""
     rows = export_rows(conn, params)
+    suffix = "_$M" if units == "m" else "_$K"
+    header = {c: f"{c}{suffix}" if c in MONEY_COLUMNS else c for c in EXPORT_COLUMNS}
     buf = io.StringIO()
-    writer = csv.DictWriter(buf, fieldnames=EXPORT_COLUMNS, extrasaction="ignore")
-    writer.writeheader()
+    writer = csv.writer(buf)
+    writer.writerow([header[c] for c in EXPORT_COLUMNS])
     for r in rows:
-        writer.writerow({**r, "change_pct": "" if r["change_pct"] is None else round(r["change_pct"] * 100, 1)})
+        out = []
+        for c in EXPORT_COLUMNS:
+            v = r.get(c)
+            if c == "change_pct":
+                v = "" if v is None else round(v * 100, 1)
+            elif c in MONEY_COLUMNS and v is not None and units == "m":
+                v = round(v / 1000, 3)
+            out.append("" if v is None else v)
+        writer.writerow(out)
     buf.seek(0)
+    name = f"budget-search-{'millions' if units == 'm' else 'thousands'}.csv"
     return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
-                             headers={"Content-Disposition": 'attachment; filename="budget-search.csv"'})
+                             headers={"Content-Disposition": f'attachment; filename="{name}"'})
 
 
 if WEB_DIST.exists():
