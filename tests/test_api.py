@@ -303,3 +303,14 @@ def test_validation_results_are_served(client):
     assert {"e1_lines", "e2_totals", "e3_explanations", "e4_outliers", "e5_search", "trace"} <= set(v["results"])
     assert v["status"]["lines"] == 59
     assert isinstance(v["program_keys"], dict)
+
+
+def test_rows_carry_above_below_budget_fields(client):
+    r = client.get("/api/search", params={"sort": "execution", "order": "desc"}).json()
+    row = r["results"][0]
+    assert row["exec_fiscal_year"] == row["fiscal_year"] - 2
+    assert {"exec_enacted", "exec_actual", "exec_is_cr"} <= row.keys()
+    # the fixtures hold only PB2027, so there's no enacted figure from the release before
+    assert row["exec_enacted"] is None
+    head = client.get("/api/search.csv").text.splitlines()[0]
+    assert "exec_enacted_$M" in head and "exec_actual_$M" in head

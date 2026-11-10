@@ -2,7 +2,7 @@
 
 export type SortKey =
   | "relevance" | "title" | "number" | "service" | "exhibit" | "account"
-  | "budget_activity" | "cycle" | "prior" | "current" | "budget" | "change" | "change_amount";
+  | "budget_activity" | "cycle" | "prior" | "current" | "budget" | "change" | "change_amount" | "execution";
 
 export interface Query {
   q: string;
@@ -51,6 +51,12 @@ export interface LineItem {
   has_description: boolean;
   change_pct: number | null;
   change_amount: number;
+  /** Above or below budget: the program's actual spending in exec_fiscal_year against what was
+   * enacted for it (the release before). Null where the releases don't hold both. */
+  exec_fiscal_year: number;
+  exec_enacted: number | null;
+  exec_actual: number | null;
+  exec_is_cr: boolean;
   snippet: string | null;
   watched: boolean;
 }
