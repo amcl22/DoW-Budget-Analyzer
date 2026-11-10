@@ -5,6 +5,7 @@ Every user value is a bound parameter; sort keys and filters come from fixed whi
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field, replace
 
 from sqlalchemy import text
@@ -67,17 +68,61 @@ def _like_escape(value: str) -> str:
     return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+# Service words in a query act as the Service filter ("artificial intelligence army").
+SERVICE_WORDS = {"army": "Army", "navy": "Navy", "air force": "Air Force", "space force": "Space Force",
+                 "defense-wide": "Defense-Wide", "defense wide": "Defense-Wide"}
+# Too common in titles to say which program is meant on their own.
+WEAK_WORDS = {"the", "and", "of", "for", "a", "an", "in", "to", "program", "programs", "system", "systems",
+              "development", "support", "mods", "mod", "class", "advanced", "technology"}
+
+
+RARE_TITLES = 15
+
+
+def interpret(p: SearchParams) -> SearchParams:
+    """Move service words from the query into the Service filter, when other words remain."""
+    q = p.q.strip()
+    found = [name for word, name in SERVICE_WORDS.items() if re.search(rf"(?<![\w-]){word}(?![\w-])", q, re.I)]
+    if not found:
+        return p
+    rest = q
+    for word in SERVICE_WORDS:
+        rest = re.sub(rf"(?<![\w-]){word}(?![\w-])", " ", rest, flags=re.I)
+    rest = " ".join(rest.split())
+    if not rest:
+        return p
+    return replace(p, q=rest, service=p.service or sorted(set(found)))
+
+
+def _title_words(q: str) -> list[str]:
+    """Distinctive words of a query, each of which may match a program title on its own."""
+    words = [w.strip("\"'(),.") for w in q.split()]
+    return [w for w in dict.fromkeys(words) if len(w) >= 3 and w.lower() not in WEAK_WORDS][:6]
+
+
 def _where(p: SearchParams) -> tuple[str, dict, str]:
     """(WHERE clause, bind params, rank expression)."""
+    p = interpret(p)
     clauses, params = [], {}
     rank = "0"
     q = p.q.strip()
     if q:
         params.update(q=q, q_prefix=_like_escape(q) + "%", q_like="%" + _like_escape(q) + "%")
+        words = _title_words(q) if len(q.split()) > 1 else []
+        word_match, word_rank = [], []
+        for i, w in enumerate(words):
+            params[f"w{i}"] = "%" + _like_escape(w) + "%"
+            # only distinctive words widen the match, so common ones ("base", "missile") don't swell
+            # the result count and totals
+            word_match.append(f" OR (f.program_title ILIKE :w{i} AND (SELECT count(*) FROM program t"
+                              f" WHERE t.latest_title ILIKE :w{i}) <= {RARE_TITLES})")
+            # rarer words count more: "patriot" says more than "missile"
+            word_rank.append(f" + CASE WHEN f.program_title ILIKE :w{i} THEN 3 + 6.0 / greatest(1,"
+                             f" (SELECT count(*) FROM program t WHERE t.latest_title ILIKE :w{i})) ELSE 0 END")
         clauses.append(
             "(li.search_tsv @@ websearch_to_tsquery('english', :q)"
             " OR f.program_element ILIKE :q_prefix OR f.line_item_number ILIKE :q_prefix"
-            " OR f.program_title ILIKE :q_like)"
+            " OR f.program_title ILIKE :q_like" + "".join(word_match) + ")"
         )
         rank = (
             "ts_rank_cd(li.search_tsv, websearch_to_tsquery('english', :q))"
@@ -85,6 +130,9 @@ def _where(p: SearchParams) -> tuple[str, dict, str]:
             # a title match outranks lines that only mention the words in their description
             " + CASE WHEN f.program_title ILIKE :q_like"
             " OR to_tsvector('english', f.program_title) @@ websearch_to_tsquery('english', :q) THEN 5 ELSE 0 END"
+            # a line matching every word in its description outranks one matching a single title word
+            " + CASE WHEN li.search_tsv @@ websearch_to_tsquery('english', :q) THEN 2 ELSE 0 END"
+            + "".join(word_rank)
         )
     if p.cycle:
         clauses.append("f.budget_cycle = :cycle")
@@ -191,7 +239,14 @@ def search(conn: Connection, p: SearchParams) -> dict:
         "page": page,
         "page_size": page_size,
         "results": [dict(r) for r in rows],
+        "interpreted": _interpreted(p),
     }
+
+
+def _interpreted(p: SearchParams) -> dict | None:
+    """How the query was read, when service words became the Service filter."""
+    i = interpret(p)
+    return None if i.q == p.q.strip() else {"q": i.q, "service": i.service}
 
 
 def export_rows(conn: Connection, p: SearchParams) -> list[dict]:

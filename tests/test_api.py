@@ -314,3 +314,12 @@ def test_rows_carry_above_below_budget_fields(client):
     assert row["exec_enacted"] is None
     head = client.get("/api/search.csv").text.splitlines()[0]
     assert "exec_enacted_$M" in head and "exec_actual_$M" in head
+
+
+def test_service_words_act_as_the_service_filter(client):
+    r = client.get("/api/search", params={"q": "army research sciences"}).json()
+    assert r["interpreted"] == {"q": "research sciences", "service": ["Army"]}
+    assert r["results"] and {x["service_branch"] for x in r["results"]} == {"Army"}
+    assert client.get("/api/search", params={"q": "research sciences"}).json()["interpreted"] is None
+    # a service word on its own stays a search
+    assert client.get("/api/search", params={"q": "navy"}).json()["interpreted"] is None

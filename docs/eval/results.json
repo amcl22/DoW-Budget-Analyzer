@@ -29,13 +29,13 @@
     },
     {
       "step": "e5_search",
-      "started": "2026-10-19T00:54:06.697856+00:00",
-      "seconds": 2.2
+      "started": "2026-11-10T18:42:42.908084+00:00",
+      "seconds": 2.0
     },
     {
       "step": "e7_summary",
-      "started": "2026-10-26T18:33:33.501079+00:00",
-      "seconds": 0.4
+      "started": "2026-11-10T18:42:44.890220+00:00",
+      "seconds": 0.3
     }
   ],
   "e2_totals": {
@@ -1458,131 +1458,210 @@
   },
   "e5_search": {
     "queries": 17,
-    "top1": 13,
-    "top5": 14,
-    "median_ms": 91,
-    "max_ms": 286,
+    "top1": 16,
+    "top5": 17,
+    "median_ms": 67,
+    "max_ms": 199,
     "rows": [
       {
         "query": "conventional prompt strike",
         "expected": "prompt strike",
         "rank": 1,
         "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
-        "ms": 286
+        "ms": 199
       },
       {
         "query": "counterspace",
         "expected": "counterspace",
         "rank": 1,
         "top_result": "Counterspace Systems",
-        "ms": 99
+        "ms": 45
       },
       {
         "query": "F-35",
         "expected": "F-35",
         "rank": 1,
         "top_result": "F-35 C2D2",
-        "ms": 86
+        "ms": 46
       },
       {
         "query": "B-21",
         "expected": "B-21",
         "rank": 1,
         "top_result": "B-21 Raider",
-        "ms": 80
+        "ms": 48
       },
       {
         "query": "Columbia submarine",
         "expected": "COLUMBIA Class",
         "rank": 1,
         "top_result": "COLUMBIA Class Submarine",
-        "ms": 104
+        "ms": 67
       },
       {
         "query": "collaborative combat aircraft",
         "expected": "Collaborative Combat Aircraft",
         "rank": 1,
         "top_result": "Collaborative Combat Aircraft",
-        "ms": 107
+        "ms": 82
       },
       {
         "query": "golden dome",
         "expected": "Golden Dome",
         "rank": 1,
         "top_result": "Golden Dome for America - Space Programs",
-        "ms": 86
+        "ms": 66
       },
       {
         "query": "hypersonic attack cruise missile",
         "expected": "Hypersonic Attack Cruise",
         "rank": 1,
         "top_result": "Hypersonics Prototyping - Hypersonic Attack Cruise Missile (HACM)",
-        "ms": 105
+        "ms": 97
       },
       {
         "query": "AMRAAM",
         "expected": "AMRAAM",
         "rank": 1,
         "top_result": "Advanced Medium Range Air-to-Air Missile (AMRAAM)",
-        "ms": 78
+        "ms": 47
       },
       {
         "query": "DDG-51 destroyer",
         "expected": "DDG-51",
-        "rank": null,
-        "top_result": "Ship Preliminary Design & Feasibility Studies",
-        "ms": 85
+        "rank": 1,
+        "top_result": "DDG-51",
+        "ms": 67
       },
       {
         "query": "0605518N",
         "expected": "PROMPT STRIKE",
         "rank": 1,
         "top_result": "CONVENTIONAL PROMPT STRIKE (CPS)",
-        "ms": 83
+        "ms": 46
       },
       {
         "query": "narrowband satellite communications",
         "expected": "Narrowband Satellite",
         "rank": 1,
         "top_result": "Narrowband Satellite Communications",
-        "ms": 96
+        "ms": 80
       },
       {
         "query": "javelin missile",
         "expected": "Javelin",
         "rank": 1,
         "top_result": "Anti-Armor Missile-Javelin",
-        "ms": 83
+        "ms": 75
       },
       {
         "query": "aegis missile defense",
         "expected": "Aegis",
-        "rank": 2,
+        "rank": 4,
         "top_result": "Ballistic Missile Defense Command and Control, Battle Management and Communications (C2BMC)",
-        "ms": 88
+        "ms": 89
       },
       {
         "query": "artificial intelligence army",
         "expected": "Artificial Intelligence",
-        "rank": null,
-        "top_result": "Software Engineering Institute",
-        "ms": 91
+        "rank": 1,
+        "top_result": "Artificial Intelligence and Machine Learning Basic Research",
+        "ms": 46
       },
       {
         "query": "E-7 wedgetail",
         "expected": "^E-7$",
-        "rank": null,
-        "top_result": null,
-        "ms": 104
+        "rank": 1,
+        "top_result": "E-7",
+        "ms": 66
       },
       {
         "query": "next generation fighter",
         "expected": "F-47|Next Generation (Air Dominance|Fighter)",
         "rank": 1,
         "top_result": "Next Generation Fighter",
-        "ms": 95
+        "ms": 81
       }
-    ]
+    ],
+    "heldout": {
+      "queries": 10,
+      "top1": 10,
+      "top5": 10,
+      "median_ms": 58.0,
+      "max_ms": 90,
+      "rows": [
+        {
+          "query": "army apache helicopter",
+          "expected": "AH-64|Apache",
+          "rank": 1,
+          "top_result": "Apache Future Development",
+          "ms": 38
+        },
+        {
+          "query": "air force tanker",
+          "expected": "KC-46|Tanker",
+          "rank": 1,
+          "top_result": "KC-46A Tanker Squadrons",
+          "ms": 24
+        },
+        {
+          "query": "space force launch",
+          "expected": "Space Launch|Launch Program \\(SPACE\\)|Space Development Agency Launch",
+          "rank": 1,
+          "top_result": "National Security Space Launch",
+          "ms": 20
+        },
+        {
+          "query": "black hawk",
+          "expected": "UH-60|Blackhawk",
+          "rank": 1,
+          "top_result": "UH-60 Blackhawk M Model (MYP)",
+          "ms": 64
+        },
+        {
+          "query": "stryker army",
+          "expected": "Stryker",
+          "rank": 1,
+          "top_result": "Stryker Upgrade",
+          "ms": 23
+        },
+        {
+          "query": "virginia class submarine",
+          "expected": "Virginia Class",
+          "rank": 1,
+          "top_result": "Virginia Class Submarine",
+          "ms": 68
+        },
+        {
+          "query": "patriot missile",
+          "expected": "Patriot",
+          "rank": 1,
+          "top_result": "Patriot Mods",
+          "ms": 65
+        },
+        {
+          "query": "abrams tank",
+          "expected": "Abrams",
+          "rank": 1,
+          "top_result": "Abrams Upgrade Program",
+          "ms": 65
+        },
+        {
+          "query": "navy unmanned surface vessel",
+          "expected": "Unmanned Surface",
+          "rank": 1,
+          "top_result": "Large Unmanned Surface Vehicles (LUSV)",
+          "ms": 52
+        },
+        {
+          "query": "sentinel icbm",
+          "expected": "Sentinel",
+          "rank": 1,
+          "top_result": "Sentinel Mods",
+          "ms": 90
+        }
+      ]
+    }
   },
   "e7_summary": {
     "checks": 11,
