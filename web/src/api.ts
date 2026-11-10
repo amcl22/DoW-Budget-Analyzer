@@ -73,6 +73,8 @@ export interface SearchResponse {
   page: number;
   page_size: number;
   results: LineItem[];
+  /** Set when service words in the query were used as the Service filter. */
+  interpreted: { q: string; service: string[] } | null;
 }
 
 export interface Facets {

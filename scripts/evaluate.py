@@ -62,6 +62,21 @@ SEARCHES = [
     ("next generation fighter", r"F-47|Next Generation (Air Dominance|Fighter)"),
 ]
 
+# Written after the v1 misses (DDG-51 destroyer, E-7 wedgetail, AI army) and before the v2 search
+# fix, in an analyst's phrasing, to check the fix generalizes beyond the cases it was built for.
+HELDOUT = [
+    ("army apache helicopter", r"AH-64|Apache"),
+    ("air force tanker", r"KC-46|Tanker"),
+    ("space force launch", r"Space Launch|Launch Program \(SPACE\)|Space Development Agency Launch"),
+    ("black hawk", r"UH-60|Blackhawk"),
+    ("stryker army", r"Stryker"),
+    ("virginia class submarine", r"Virginia Class"),
+    ("patriot missile", r"Patriot"),
+    ("abrams tank", r"Abrams"),
+    ("navy unmanned surface vessel", r"Unmanned Surface"),
+    ("sentinel icbm", r"Sentinel"),
+]
+
 _pages: dict[tuple[str, int], str] = {}
 _docs: dict[str, pymupdf.Document] = {}
 
@@ -233,6 +248,26 @@ def e4_outliers(conn) -> dict:
     return {"lines": len(checked), "confirmed": sum(c["confirmed_on_page"] for c in checked), "rows": checked}
 
 
+def _search_rows(client, queries) -> list[dict]:
+    out = []
+    for q, expect in queries:
+        t0 = time.perf_counter()
+        resp = client.get("/api/search", params={"q": q, "cycle": "PB2027", "page_size": 10})
+        ms = (time.perf_counter() - t0) * 1000
+        titles = [r["program_title"] for r in resp.json()["results"]]
+        rank = next((i + 1 for i, t in enumerate(titles) if re.search(expect, t, re.I)), None)
+        out.append({"query": q, "expected": expect, "rank": rank, "top_result": titles[0] if titles else None,
+                    "ms": round(ms)})
+    return out
+
+
+def _score(rows: list[dict]) -> dict:
+    lat = [o["ms"] for o in rows]
+    return {"queries": len(rows), "top1": sum(o["rank"] == 1 for o in rows),
+            "top5": sum(o["rank"] is not None and o["rank"] <= 5 for o in rows),
+            "median_ms": statistics.median(lat), "max_ms": max(lat), "rows": rows}
+
+
 def e5_search() -> dict:
     import os
 
@@ -242,19 +277,9 @@ def e5_search() -> dict:
     from api.main import app
 
     client = TestClient(app)
-    out = []
-    for q, expect in SEARCHES:
-        t0 = time.perf_counter()
-        resp = client.get("/api/search", params={"q": q, "cycle": "PB2027", "page_size": 10})
-        ms = (time.perf_counter() - t0) * 1000
-        titles = [r["program_title"] for r in resp.json()["results"]]
-        rank = next((i + 1 for i, t in enumerate(titles) if re.search(expect, t, re.I)), None)
-        out.append({"query": q, "expected": expect, "rank": rank, "top_result": titles[0] if titles else None,
-                    "ms": round(ms)})
-    lat = [o["ms"] for o in out]
-    return {"queries": len(out), "top1": sum(o["rank"] == 1 for o in out),
-            "top5": sum(o["rank"] is not None and o["rank"] <= 5 for o in out),
-            "median_ms": statistics.median(lat), "max_ms": max(lat), "rows": out}
+    result = _score(_search_rows(client, SEARCHES))
+    result["heldout"] = _score(_search_rows(client, HELDOUT))
+    return result
 
 
 def e7_summary(conn) -> dict:
@@ -323,16 +348,26 @@ def e6_coverage(conn) -> dict:
 def main() -> None:
     from datetime import datetime, timezone
 
-    if "--only-e7" in sys.argv:          # the PDF checks need the source files; this one doesn't
+    # the PDF checks (E1, E3, E4) need the source files; search (E5) and summaries (E7) don't
+    only = {"--only-e7": ("e7_summary",), "--only-db": ("e5_search", "e7_summary")}
+    picked = next((keys for flag, keys in only.items() if flag in sys.argv), None)
+    if picked:
         results = json.loads((OUT / "results.json").read_text())
-        with create_engine(database_url()).connect() as conn:
+        for key in picked:
             started = datetime.now(timezone.utc)
-            results["e7_summary"] = e7_summary(conn)
-        results["trace"] = [t for t in results.get("trace", []) if t["step"] != "e7_summary"] + [
-            {"step": "e7_summary", "started": started.isoformat(),
-             "seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 1)}]
+            if key == "e5_search":
+                results[key] = e5_search()
+            else:
+                with create_engine(database_url()).connect() as conn:
+                    results[key] = e7_summary(conn)
+            results["trace"] = [t for t in results.get("trace", []) if t["step"] != key] + [
+                {"step": key, "started": started.isoformat(),
+                 "seconds": round((datetime.now(timezone.utc) - started).total_seconds(), 1)}]
         (OUT / "results.json").write_text(json.dumps(results, indent=2, default=str))
-        print(json.dumps(results["e7_summary"], indent=2))
+        e5 = results["e5_search"]
+        print(f"E5 benchmark top-5 {e5['top5']}/{e5['queries']}, top-1 {e5['top1']}; held-out top-5 "
+              f"{e5['heldout']['top5']}/{e5['heldout']['queries']}, top-1 {e5['heldout']['top1']}; "
+              f"median {e5['median_ms']} ms")
         return
 
     engine = create_engine(database_url())
@@ -364,7 +399,8 @@ def main() -> None:
         f"{e3['right_program_section']}/{e3['sample']} on a page of the right program",
         f"- E4 outliers: {e4['confirmed']}/{e4['lines']} PB2027 outliers confirmed on the source page",
         f"- E5 search: {e5['top1']}/{e5['queries']} top-1, {e5['top5']}/{e5['queries']} top-5; "
-        f"median {e5['median_ms']:.0f} ms",
+        f"median {e5['median_ms']:.0f} ms; held-out {e5['heldout']['top1']}/{e5['heldout']['queries']} top-1, "
+        f"{e5['heldout']['top5']}/{e5['heldout']['queries']} top-5",
         "", "## E1 failures", *[f"- {f}" for f in e1["failures"]],
         "", "## E3 failures", *[f"- {f}" for f in e3["failures"]],
         "", "## E5 searches", *[f"- `{r['query']}` → rank {r['rank']} (top: {r['top_result']}, {r['ms']} ms)" for r in e5["rows"]],

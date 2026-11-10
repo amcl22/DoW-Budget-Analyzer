@@ -174,6 +174,11 @@ export function SearchPage() {
               {fiscalYear && data.budget_year_total !== null && (
                 <> · FY{fiscalYear} request <strong>{fmtMoney(data.budget_year_total)}</strong></>
               )}
+              {data.interpreted && (
+                <span className="muted" title="Service names in a search act as the Service filter">
+                  {" "}· searched “{data.interpreted.q}” in {data.interpreted.service.join(", ")}
+                </span>
+              )}
               {loading && <span className="loading"> · updating…</span>}
             </span>
             {effective && data.total > 0 && (
