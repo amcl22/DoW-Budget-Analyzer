@@ -76,6 +76,39 @@ function DollarChange({ row }: { row: LineItem }) {
   return <td className={`num ${v > 0 ? "up" : v < 0 ? "down" : "muted"}`}>{fmtChange(v)}</td>;
 }
 
+/** Within this share of the enacted amount counts as on budget. */
+const ON_BUDGET = 0.02;
+
+/** Did the program spend more or less than Congress enacted? Prior-year actual (this release)
+ * against the enacted amount for that year (the release before), for the whole program. */
+export function execStatus(row: LineItem):
+  { kind: "over" | "under" | "on" | "cr" | "none"; pct: number | null; detail: string } {
+  const { exec_enacted: enacted, exec_actual: actual, exec_fiscal_year: year } = row;
+  if (enacted === null || actual === null || enacted <= 0) {
+    return { kind: "none", pct: null, detail: `No FY${year} enacted and actual figures to compare for this program` };
+  }
+  if (row.exec_is_cr) {
+    return { kind: "cr", pct: null,
+      detail: `FY${year} ran on a continuing resolution, so there is no enacted amount to compare against. Actual ${fmtMoney(actual)}; CR level ${fmtMoney(enacted)}` };
+  }
+  const pct = (actual - enacted) / enacted;
+  const detail = `FY${year} program actual ${fmtMoney(actual)} vs. enacted ${fmtMoney(enacted)} (${fmtChange(actual - enacted)})`;
+  if (Math.abs(pct) < ON_BUDGET) return { kind: "on", pct, detail };
+  return { kind: pct > 0 ? "over" : "under", pct, detail };
+}
+
+function ExecBadge({ row }: { row: LineItem }) {
+  const s = execStatus(row);
+  if (s.kind === "none") return <td className="num muted" title={s.detail}>—</td>;
+  const label = {
+    over: <>▲ Over {fmtPct(Math.abs(s.pct!)).slice(1)}</>,
+    under: <>▼ Under {fmtPct(Math.abs(s.pct!)).slice(1)}</>,
+    on: <>● On budget</>,
+    cr: <>CR year</>,
+  }[s.kind];
+  return <td className="num"><span className={`badge exec-${s.kind}`} title={s.detail}>{label}</span></td>;
+}
+
 /** Prior -> current -> budget year, the three figures in the row. */
 function RowTrend({ row }: { row: LineItem }) {
   const pts = [
@@ -112,6 +145,7 @@ export function ResultsTable({ rows, fiscalYear, showRelease, sort, order, searc
             <SortHeader label={fy(0)} sub={fiscalYear ? "request" : undefined} k="budget" numeric {...h} />
             <SortHeader label="$ change" sub="vs. current" k="change_amount" numeric {...h} />
             <SortHeader label="% change" k="change" numeric {...h} />
+            <SortHeader label="vs. budget" sub={fiscalYear ? `FY${fiscalYear - 2} spent` : "prior yr spent"} k="execution" numeric {...h} />
             <th className="plain trend" title="Prior, current and budget year">Trend</th>
             <th className="source">Source</th>
           </tr>
@@ -146,6 +180,7 @@ export function ResultsTable({ rows, fiscalYear, showRelease, sort, order, searc
               <Amount value={r.budget_year_amount} qty={r.budget_year_quantity} />
               <DollarChange row={r} />
               <Change row={r} />
+              <ExecBadge row={r} />
               <RowTrend row={r} />
               <td className="source">
                 {r.source_pdf_link ? (

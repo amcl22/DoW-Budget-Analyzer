@@ -32,6 +32,7 @@ const READING: [string, string][] = [
   ["$ change and % change", "Budget year minus current year. The percentage is flagged at ±20% or more."],
   ["New start", "No current-year funding and a budget-year request: a percentage would be meaningless, so none is shown."],
   ["Ending", "Current-year funding but nothing requested in the budget year."],
+  ["vs. budget (over / under)", "Did the program spend more or less than Congress gave it? The prior year's actual spending (this release) against the amount enacted for that year (the release before), for the whole program. ▲ Over and ▼ Under show the gap; within ±2% is On budget. A year funded by a continuing resolution shows CR year, since there was no enacted amount to compare against."],
   ["Small base", "Current year under $5 million: the percentage can look extreme (e.g. Counterspace Systems procurement, $2.0M to $459.5M, +22,567%), so compare the $ change."],
   ["Best available figure", "For each fiscal year, the actual once reported, else the enacted amount, else the request, from the newest release that reports it."],
   ["Source links", "Every line links to the page of the official PDF it came from; the amounts were matched to that page when the data was loaded."],

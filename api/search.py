@@ -43,6 +43,7 @@ SORTS = {
     "budget": "f.budget_year_amount",
     "change": "change_pct",
     "change_amount": "change_amount",
+    "execution": "CASE WHEN ex.exec_enacted > 0 AND NOT ex.exec_is_cr THEN (ex.exec_actual - ex.exec_enacted)::float / ex.exec_enacted END",
 }
 
 
@@ -133,12 +134,24 @@ def _select(p: SearchParams) -> tuple[str, dict]:
                    AS watched,
                {CHANGE_PCT} AS change_pct,
                {CHANGE_AMOUNT} AS change_amount,
+               f.fiscal_year - 2 AS exec_fiscal_year, ex.exec_enacted, ex.exec_actual, ex.exec_is_cr,
                ({rank}) AS rank,
                CASE WHEN f.raw_description_text IS NULL THEN NULL ELSE {snippet} END AS snippet
         FROM line_item_flat f
         JOIN budget_line_item li ON li.id = f.id
         JOIN appropriation_account acc ON acc.code = f.appropriation_account
         JOIN program pr ON pr.id = f.program_id
+        -- above or below budget: the program's prior-year actual (this release) against what was
+        -- enacted for that year (the release before), across all of the program's lines
+        LEFT JOIN LATERAL (
+            SELECT sum(h.amount_thousands) FILTER (WHERE h.release_fiscal_year = f.fiscal_year - 1
+                                                     AND h.amount_type IN ('enacted', 'cr'))::bigint AS exec_enacted,
+                   sum(h.amount_thousands) FILTER (WHERE h.release_fiscal_year = f.fiscal_year
+                                                     AND h.amount_type = 'actual')::bigint AS exec_actual,
+                   coalesce(bool_or(h.amount_type = 'cr' AND h.release_fiscal_year = f.fiscal_year - 1), false) AS exec_is_cr
+            FROM program_funding_history h
+            WHERE h.program_id = f.program_id AND h.funds_fiscal_year = f.fiscal_year - 2
+        ) ex ON true
         {where}
         ORDER BY {sort} {direction} NULLS LAST, f.budget_year_amount DESC NULLS LAST, f.id
     """

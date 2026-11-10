@@ -234,12 +234,13 @@ EXPORT_COLUMNS = [
     "organization", "budget_activity", "budget_activity_title", "line_number", "program_element",
     "line_item_number", "program_title", "prior_year_amount", "current_year_amount", "budget_year_amount",
     "budget_year_discretionary", "budget_year_mandatory", "prior_year_quantity", "current_year_quantity",
-    "budget_year_quantity", "change_amount", "change_pct", "source_pdf_link",
+    "budget_year_quantity", "change_amount", "change_pct", "exec_fiscal_year", "exec_enacted", "exec_actual",
+    "source_pdf_link",
 ]
 
 
 MONEY_COLUMNS = {"prior_year_amount", "current_year_amount", "budget_year_amount", "budget_year_discretionary",
-                 "budget_year_mandatory", "change_amount"}
+                 "budget_year_mandatory", "change_amount", "exec_enacted", "exec_actual"}
 
 
 @app.get("/api/search.csv")

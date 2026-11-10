@@ -481,3 +481,9 @@ td.trend, th.trend { width: 80px; }
 .op-chart { margin-bottom: 14px; }
 .one-pager { overflow-wrap: anywhere; }
 @media (max-width: 640px) { .one-pager { padding: 14px 12px; } .op-table { font-size: 12px; } }
+
+/* above / below budget: arrow and words carry the meaning, color backs them up */
+.badge.exec-over { background: var(--up-soft); color: var(--up); white-space: nowrap; }
+.badge.exec-under { background: var(--down-soft); color: var(--down); white-space: nowrap; }
+.badge.exec-on { background: var(--border); color: var(--text); white-space: nowrap; }
+.badge.exec-cr { background: transparent; color: var(--muted); border: 1px dashed var(--border); font-weight: 500; white-space: nowrap; }
